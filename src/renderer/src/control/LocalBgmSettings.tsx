@@ -45,7 +45,7 @@ export function LocalBgmSettings({
         </div>
       </div>
       {localBgm.playlists.length === 0 ? (
-        <p className="local-bgm-empty">素材ライブラリでプレイリストを作成してください</p>
+        <p className="local-bgm-empty">上のライブラリでプレイリストを作成してください</p>
       ) : (
         <>
           <label className="audio-device-field">

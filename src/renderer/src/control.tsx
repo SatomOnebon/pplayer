@@ -22,6 +22,7 @@ import { CueListPanel } from './control/CueListPanel'
 import { ExportPanel } from './control/ExportPanel'
 import { MaskSettings } from './control/MaskSettings'
 import { DisplaySleepSettings } from './control/DisplaySleepSettings'
+import { LocalBgmLibrary } from './control/LocalBgmLibrary'
 import { MaterialLibrary } from './control/MaterialLibrary'
 import { MaterialPreviewModal } from './control/MaterialPreviewModal'
 import { PhotoListPanel } from './control/PhotoListPanel'
@@ -253,7 +254,6 @@ export function Control(): React.JSX.Element {
           </div>
           <MaterialLibrary
             materials={state.materials}
-            localBgm={state.localBgm}
             standbyStillId={state.standbyStillId}
             send={send}
             onMessage={showMessage}
@@ -477,7 +477,12 @@ export function Control(): React.JSX.Element {
           </nav>
           <section className="setbody">
             {setupSection === 'materials' && materialContent}
-            {setupSection === 'bgm' && <BgmPanel localBgm={state.localBgm} send={send} />}
+            {setupSection === 'bgm' && (
+              <>
+                <LocalBgmLibrary localBgm={state.localBgm} send={send} onMessage={showMessage} />
+                <BgmPanel localBgm={state.localBgm} send={send} />
+              </>
+            )}
             {setupSection === 'stage' && (
               <>
                 <MaskSettings

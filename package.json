@@ -4,7 +4,15 @@
   "description": "ライブイベント用の映像ポン出し（キュー出し）アプリ（円形スクリーン投影・BGM 再生はローカル音源／Spotify）",
   "main": "./out/main/index.js",
   "author": "onelab",
-  "homepage": "https://electron-vite.org",
+  "license": "MIT",
+  "homepage": "https://github.com/SatomOnebon/pplayer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SatomOnebon/pplayer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SatomOnebon/pplayer/issues"
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

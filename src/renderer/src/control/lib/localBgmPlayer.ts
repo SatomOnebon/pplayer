@@ -25,6 +25,7 @@ let snapshot: LocalBgmSnapshot = {
 }
 let activeDeck: 0 | 1 = 0
 let targetVolume = snapshot.volume
+let masterGain = 1
 let currentPlaylist: LocalBgmPlaylist | null = null
 let currentIndex = 0
 let fadeToken = 0
@@ -78,13 +79,13 @@ async function rampToTarget(deck: HTMLAudioElement, ms: number, token: number): 
   if (fadeToken !== token) return
   const from = deck.volume
   if (ms <= 0) {
-    deck.volume = targetVolume
+    deck.volume = targetVolume * masterGain
     return
   }
   const startedAt = performance.now()
   while (fadeToken === token) {
     const progress = Math.min(1, (performance.now() - startedAt) / ms)
-    deck.volume = from + (targetVolume - from) * progress
+    deck.volume = from + (targetVolume * masterGain - from) * progress
     if (progress >= 1) return
     await wait(Math.min(50, ms))
   }
@@ -270,7 +271,14 @@ export function setVolume(volume: number): void {
   if (transitioning) return
   fadeToken += 1
   automaticTransition = false
-  decks[activeDeck].volume = targetVolume
+  decks[activeDeck].volume = targetVolume * masterGain
+}
+
+export function setMasterGain(gain: number): void {
+  masterGain = Math.min(1, Math.max(0, gain))
+  if (snapshot.playing && !transitioning) {
+    decks[activeDeck].volume = targetVolume * masterGain
+  }
 }
 
 export function stop(): void {
@@ -281,7 +289,7 @@ export function stop(): void {
     deck.pause()
     deck.removeAttribute('src')
     deck.load()
-    deck.volume = targetVolume
+    deck.volume = targetVolume * masterGain
   })
   currentPlaylist = null
   currentIndex = 0

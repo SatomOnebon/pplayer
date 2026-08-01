@@ -512,9 +512,6 @@ export class AppStateStore {
             : playlist
         )
         break
-      case 'setBgmOutputDevice':
-        this.state.localBgm.outputDeviceId = command.deviceId
-        break
       case 'setLocalBgmCrossfade':
         this.state.localBgm.crossfadeMode =
           command.mode === 'crossfade' || command.mode === 'gap'

@@ -53,7 +53,7 @@ test('ローカル BGM 設定のプレイリストとトラックを型検証し
         },
         { id: 2, name: '不正', tracks: [] }
       ],
-      outputDeviceId: 'speaker-1',
+      outputDeviceId: 'legacy-speaker-is-ignored',
       crossfadeMode: 'gap',
       fadeMs: 20_000
     }),
@@ -65,7 +65,6 @@ test('ローカル BGM 設定のプレイリストとトラックを型検証し
           tracks: [{ id: 'track-1', name: '開演', filePath: '/show/opening.mp3' }]
         }
       ],
-      outputDeviceId: 'speaker-1',
       crossfadeMode: 'gap',
       fadeMs: 10_000
     }
@@ -75,7 +74,6 @@ test('ローカル BGM 設定のプレイリストとトラックを型検証し
 test('ローカル BGM 設定の欠損値と不正値を既定値へ戻す', () => {
   assert.deepEqual(normalizeLocalBgm(undefined), {
     playlists: [],
-    outputDeviceId: null,
     crossfadeMode: 'crossfade',
     fadeMs: 2_000
   })
@@ -88,7 +86,6 @@ test('ローカル BGM 設定の欠損値と不正値を既定値へ戻す', () 
     }),
     {
       playlists: [],
-      outputDeviceId: null,
       crossfadeMode: 'crossfade',
       fadeMs: 2_000
     }

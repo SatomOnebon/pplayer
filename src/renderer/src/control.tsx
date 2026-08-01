@@ -103,6 +103,17 @@ export function Control(): React.JSX.Element {
 
   useEffect(() => {
     if (!state) return
+    localBgmPlayer.setMasterGain(state.masterVolume)
+    spotifyPlayer.setMasterGain(state.masterVolume)
+  }, [state?.masterVolume])
+
+  useEffect(() => {
+    if (!state) return
+    localBgmPlayer.setOutputDevice(state.audioOutputDeviceId)
+  }, [state?.audioOutputDeviceId])
+
+  useEffect(() => {
+    if (!state) return
     const id = state.activeCueId
     if (prevCueIdRef.current === undefined) {
       prevCueIdRef.current = id

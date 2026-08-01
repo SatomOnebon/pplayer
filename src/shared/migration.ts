@@ -81,10 +81,6 @@ export function normalizeLocalBgm(value: unknown): LocalBgmState {
     : []
   return {
     playlists,
-    outputDeviceId:
-      raw.outputDeviceId === null || typeof raw.outputDeviceId === 'string'
-        ? raw.outputDeviceId
-        : null,
     crossfadeMode: raw.crossfadeMode === 'gap' ? 'gap' : 'crossfade',
     fadeMs:
       typeof raw.fadeMs === 'number' && Number.isFinite(raw.fadeMs)

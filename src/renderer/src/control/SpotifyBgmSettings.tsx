@@ -205,7 +205,7 @@ export function SpotifyBgmSettings(): React.JSX.Element {
             <small>{snapshot.artistName ?? '—'}</small>
           </div>
           <label className="spotify-volume">
-            <span>音量 {Math.round(snapshot.volume * 100)}%</span>
+            <span>BGM 音量 {Math.round(snapshot.volume * 100)}%</span>
             <input
               type="range"
               min={0}

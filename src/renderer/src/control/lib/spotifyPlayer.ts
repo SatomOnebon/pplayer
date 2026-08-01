@@ -30,6 +30,8 @@ let scriptRequested = false
 let currentContextUri: string | null = null
 let fadeToken = 0
 let actualVolume = initialSnapshot.volume
+let masterGain = 1
+let activeRampToken: number | null = null
 const listeners = new Set<() => void>()
 
 function update(changes: Partial<SpotifyPlayerSnapshot>): void {
@@ -68,9 +70,10 @@ function createPlayer(expectedGeneration: number): void {
         }
       })
     },
-    volume: snapshot.volume
+    volume: snapshot.volume * masterGain
   })
   player = nextPlayer
+  actualVolume = snapshot.volume * masterGain
 
   nextPlayer.addListener('ready', ({ device_id }) => {
     if (player !== nextPlayer) return
@@ -152,7 +155,7 @@ export function stopPlayer(): void {
   deviceId = null
   currentContextUri = null
   fadeToken += 1
-  actualVolume = initialSnapshot.volume
+  actualVolume = initialSnapshot.volume * masterGain
   snapshot = initialSnapshot
   listeners.forEach((listener) => listener())
 }
@@ -205,9 +208,18 @@ export function previousTrack(): void {
 export function setVolume(volume: number): void {
   const normalized = Math.min(1, Math.max(0, volume))
   fadeToken += 1
-  actualVolume = normalized
+  const effectiveVolume = normalized * masterGain
+  actualVolume = effectiveVolume
   update({ volume: normalized })
-  run(player ? () => player!.setVolume(normalized) : undefined, '音量を変更できませんでした')
+  run(player ? () => player!.setVolume(effectiveVolume) : undefined, '音量を変更できませんでした')
+}
+
+export function setMasterGain(gain: number): void {
+  masterGain = Math.min(1, Math.max(0, gain))
+  if (activeRampToken !== null) return
+  const effectiveVolume = snapshot.volume * masterGain
+  actualVolume = effectiveVolume
+  run(player ? () => player!.setVolume(effectiveVolume) : undefined, '音量を変更できませんでした')
 }
 
 function wait(ms: number): Promise<void> {
@@ -219,21 +231,26 @@ async function rampVolume(to: number, ms: number, token: number): Promise<void> 
   if (!activePlayer || fadeToken !== token) return
   const target = Math.min(1, Math.max(0, to))
   const from = actualVolume
-  if (ms <= 0) {
-    await activePlayer.setVolume(target)
-    if (fadeToken === token) actualVolume = target
-    return
-  }
+  activeRampToken = token
+  try {
+    if (ms <= 0) {
+      await activePlayer.setVolume(target)
+      if (fadeToken === token) actualVolume = target
+      return
+    }
 
-  const startedAt = performance.now()
-  while (fadeToken === token) {
-    const progress = Math.min(1, (performance.now() - startedAt) / ms)
-    const volume = from + (target - from) * progress
-    await activePlayer.setVolume(volume)
-    if (fadeToken !== token) return
-    actualVolume = volume
-    if (progress >= 1) return
-    await wait(Math.min(50, ms))
+    const startedAt = performance.now()
+    while (fadeToken === token) {
+      const progress = Math.min(1, (performance.now() - startedAt) / ms)
+      const volume = from + (target - from) * progress
+      await activePlayer.setVolume(volume)
+      if (fadeToken !== token) return
+      actualVolume = volume
+      if (progress >= 1) return
+      await wait(Math.min(50, ms))
+    }
+  } finally {
+    if (activeRampToken === token) activeRampToken = null
   }
 }
 
@@ -260,7 +277,7 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
         if (fadeToken !== token) return
       }
       setActiveBgmSource('spotify')
-      await rampVolume(snapshot.volume, 0, token)
+      await rampVolume(snapshot.volume * masterGain, 0, token)
       return
     }
     activate()
@@ -269,7 +286,7 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
     if (fadeToken !== token) return
     await playContext(bgm.uri, token)
     if (fadeToken !== token || currentContextUri !== bgm.uri) return
-    await rampVolume(snapshot.volume, bgm.fadeMs, token)
+    await rampVolume(snapshot.volume * masterGain, bgm.fadeMs, token)
     return
   }
 

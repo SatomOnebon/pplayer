@@ -129,7 +129,6 @@ const playbackCommandValidators = {
   reorderLocalBgmTracks: (value) =>
     typeof value.playlistId === 'string' && isStringArray(value.trackIds),
   reloadLocalBgmPlaylist: (value) => typeof value.playlistId === 'string',
-  setBgmOutputDevice: (value) => value.deviceId === null || typeof value.deviceId === 'string',
   setLocalBgmCrossfade: (value) =>
     (value.mode === 'crossfade' || value.mode === 'gap') && isFiniteNumber(value.fadeMs),
   setEditingSlideshow: (value) => typeof value.materialId === 'string',

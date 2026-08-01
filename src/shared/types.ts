@@ -100,14 +100,12 @@ export interface LocalBgmPlaylist {
 
 export interface LocalBgmState {
   playlists: LocalBgmPlaylist[]
-  outputDeviceId: string | null
   crossfadeMode: 'crossfade' | 'gap'
   fadeMs: number
 }
 
 export const DEFAULT_LOCAL_BGM: LocalBgmState = {
   playlists: [],
-  outputDeviceId: null,
   crossfadeMode: 'crossfade',
   fadeMs: 2000
 }
@@ -391,7 +389,6 @@ export type PlaybackCommand =
   | { type: 'removeLocalBgmTrack'; playlistId: string; trackId: string }
   | { type: 'reorderLocalBgmTracks'; playlistId: string; trackIds: string[] }
   | { type: 'reloadLocalBgmPlaylist'; playlistId: string }
-  | { type: 'setBgmOutputDevice'; deviceId: string | null }
   | { type: 'setLocalBgmCrossfade'; mode: 'crossfade' | 'gap'; fadeMs: number }
   | { type: 'setEditingSlideshow'; materialId: string }
   | {

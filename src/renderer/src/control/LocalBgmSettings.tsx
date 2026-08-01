@@ -14,7 +14,6 @@ export function LocalBgmSettings({
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(
     () => localBgm.playlists[0]?.id ?? ''
   )
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const selectedPlaylist = localBgm.playlists.find((item) => item.id === selectedPlaylistId)
 
   useEffect(() => {
@@ -22,28 +21,6 @@ export function LocalBgmSettings({
       setSelectedPlaylistId(localBgm.playlists[0]?.id ?? '')
     }
   }, [localBgm.playlists, selectedPlaylistId])
-
-  useEffect(() => {
-    let active = true
-    const refresh = (): void => {
-      void navigator.mediaDevices
-        ?.enumerateDevices()
-        .then((items) => {
-          if (active) setDevices(items.filter((item) => item.kind === 'audiooutput'))
-        })
-        .catch(() => undefined)
-    }
-    refresh()
-    navigator.mediaDevices?.addEventListener('devicechange', refresh)
-    return () => {
-      active = false
-      navigator.mediaDevices?.removeEventListener('devicechange', refresh)
-    }
-  }, [])
-
-  useEffect(() => {
-    localBgmPlayer.setOutputDevice(localBgm.outputDeviceId)
-  }, [localBgm.outputDeviceId])
 
   useEffect(() => {
     localBgmPlayer.setCrossfade(localBgm.crossfadeMode, localBgm.fadeMs)
@@ -111,7 +88,7 @@ export function LocalBgmSettings({
             <strong>{snapshot.trackName ?? '—'}</strong>
           </div>
           <label className="spotify-volume">
-            <span>音量 {Math.round(snapshot.volume * 100)}%</span>
+            <span>BGM 音量 {Math.round(snapshot.volume * 100)}%</span>
             <input
               type="range"
               min={0}
@@ -122,22 +99,6 @@ export function LocalBgmSettings({
           </label>
         </>
       )}
-      <label className="audio-device-field">
-        <span>出力デバイス</span>
-        <select
-          value={localBgm.outputDeviceId ?? ''}
-          onChange={(event) =>
-            send({ type: 'setBgmOutputDevice', deviceId: event.target.value || null })
-          }
-        >
-          <option value="">システム既定</option>
-          {devices.map((device, index) => (
-            <option key={device.deviceId} value={device.deviceId}>
-              {device.label || `音声出力 ${index + 1}`}
-            </option>
-          ))}
-        </select>
-      </label>
       <div className="local-bgm-crossfade">
         <label>
           <span>曲間</span>

@@ -105,8 +105,8 @@ export function PlaybackCanvas({
     video.muted = muted
     video.volume = Math.max(0, Math.min(1, videoVolume ?? 1))
 
-    if (!muted && audioOutputDeviceId && 'setSinkId' in video) {
-      void video.setSinkId(audioOutputDeviceId).catch((error: unknown) => {
+    if (!muted && 'setSinkId' in video) {
+      void video.setSinkId(audioOutputDeviceId ?? '').catch((error: unknown) => {
         console.warn('音声出力デバイスを設定できなかったため既定デバイスを使用します', error)
       })
     }

@@ -126,6 +126,7 @@ export function TransportPanel({
           value={masterVolumePercent}
           onChange={(event) => queueMasterVolume(Number(event.target.value) / 100)}
         />
+        <small className="master-volume-hint">映像・BGM 全体（Spotify 含む）</small>
         {masterVolumePercent === 0 && <small>ミュート中</small>}
       </div>
       {state.audioFallbackActive && (

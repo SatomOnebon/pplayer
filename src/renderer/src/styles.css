@@ -1573,6 +1573,10 @@ input[type='radio'] {
   white-space: nowrap;
 }
 
+.master-volume-control small.master-volume-hint {
+  color: #8f97a5;
+}
+
 .cue-list {
   display: grid;
   gap: 0.25rem;

@@ -31,11 +31,11 @@ export function AudioSettings({
       <div className="panel-heading compact">
         <div>
           <h2>音声設定</h2>
-          <span>動画の出力先</span>
+          <span>映像・ローカル BGM 共通の出力先</span>
         </div>
       </div>
       <label className="audio-device-field">
-        <span>出力デバイス</span>
+        <span>音声出力デバイス（映像・BGM 共通）</span>
         <select
           value={deviceId ?? ''}
           onChange={(event) =>

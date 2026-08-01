@@ -72,9 +72,6 @@ function parseLocalBgm(value: unknown): LocalBgmState | null {
                 typeof track.filePath !== 'string'
             )
         ))) ||
-    (value.outputDeviceId !== undefined &&
-      value.outputDeviceId !== null &&
-      typeof value.outputDeviceId !== 'string') ||
     (value.crossfadeMode !== undefined &&
       value.crossfadeMode !== 'crossfade' &&
       value.crossfadeMode !== 'gap') ||

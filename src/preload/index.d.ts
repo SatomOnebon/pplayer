@@ -30,6 +30,7 @@ export interface PPlayerAPI {
   getFilePath(file: File): string
   chooseMaskImage(): Promise<void>
   chooseVideo(): Promise<boolean>
+  chooseAudio(): Promise<{ name: string; filePath: string }[]>
   chooseStill(): Promise<boolean>
   openExternalPlayer(filePath: string): Promise<string>
   notifyMediaEnded(activeCueId: string): void

@@ -2,10 +2,12 @@ import {
   DEFAULT_MASK,
   DEFAULT_FTB_DURATION_MS,
   DEFAULT_TIMING,
+  DEFAULT_LOCAL_BGM,
   type AppState,
   type CueBgm,
   type FitMode,
   type MaskConfig,
+  type LocalBgmState,
   type PhotoItem,
   type ProjectPhoto,
   type ProjectState,
@@ -34,6 +36,59 @@ export function normalizeCueBgm(value: unknown): CueBgm | undefined {
     return { mode: 'stop', fadeMs: Math.min(10_000, Math.max(0, bgm.fadeMs)) }
   }
   return undefined
+}
+
+export function normalizeLocalBgm(value: unknown): LocalBgmState {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return structuredClone(DEFAULT_LOCAL_BGM)
+  }
+  const raw = value as Record<string, unknown>
+  const playlists = Array.isArray(raw.playlists)
+    ? raw.playlists.flatMap((playlist) => {
+        if (
+          typeof playlist !== 'object' ||
+          playlist === null ||
+          Array.isArray(playlist) ||
+          typeof (playlist as Record<string, unknown>).id !== 'string' ||
+          typeof (playlist as Record<string, unknown>).name !== 'string' ||
+          !Array.isArray((playlist as Record<string, unknown>).tracks)
+        )
+          return []
+        const item = playlist as Record<string, unknown>
+        const tracks = (item.tracks as unknown[]).flatMap((track) => {
+          if (
+            typeof track !== 'object' ||
+            track === null ||
+            Array.isArray(track) ||
+            typeof (track as Record<string, unknown>).id !== 'string' ||
+            typeof (track as Record<string, unknown>).name !== 'string' ||
+            typeof (track as Record<string, unknown>).filePath !== 'string'
+          )
+            return []
+          const value = track as Record<string, unknown>
+          return [
+            {
+              id: value.id as string,
+              name: value.name as string,
+              filePath: value.filePath as string
+            }
+          ]
+        })
+        return [{ id: item.id as string, name: item.name as string, tracks }]
+      })
+    : []
+  return {
+    playlists,
+    outputDeviceId:
+      raw.outputDeviceId === null || typeof raw.outputDeviceId === 'string'
+        ? raw.outputDeviceId
+        : null,
+    crossfadeMode: raw.crossfadeMode === 'gap' ? 'gap' : 'crossfade',
+    fadeMs:
+      typeof raw.fadeMs === 'number' && Number.isFinite(raw.fadeMs)
+        ? Math.min(10_000, Math.max(0, raw.fadeMs))
+        : DEFAULT_LOCAL_BGM.fadeMs
+  }
 }
 
 type LegacyVideoMaterial = AppState['materials']['videos'][number] & {
@@ -191,6 +246,7 @@ export function migrateV1State(
       videos: [],
       stills: []
     },
+    localBgm: structuredClone(DEFAULT_LOCAL_BGM),
     cues: [
       {
         id: idFactory(),
@@ -230,6 +286,7 @@ export function migrateV1Project(
   const migrated = migrateV1State(saved, idFactory)
   return {
     materials: migrated.materials,
+    localBgm: migrated.localBgm,
     cues: migrated.cues,
     standbyStillId: migrated.standbyStillId,
     audioOutputDeviceId: migrated.audioOutputDeviceId,

@@ -217,6 +217,7 @@ export function Control(): React.JSX.Element {
           </div>
           <MaterialLibrary
             materials={state.materials}
+            localBgm={state.localBgm}
             standbyStillId={state.standbyStillId}
             send={send}
             onMessage={showMessage}

@@ -114,6 +114,18 @@ function mediaContentType(filePath: string): string {
       return 'video/mp4'
     case '.mov':
       return 'video/quicktime'
+    case '.mp3':
+      return 'audio/mpeg'
+    case '.m4a':
+    case '.aac':
+      return 'audio/mp4'
+    case '.wav':
+      return 'audio/wav'
+    case '.flac':
+      return 'audio/flac'
+    case '.ogg':
+    case '.opus':
+      return 'audio/ogg'
     case '.jpg':
     case '.jpeg':
       return 'image/jpeg'
@@ -335,6 +347,19 @@ function registerIpc(): void {
     const name = basename(filePath, extname(filePath))
     stateStore.apply({ type: 'addVideoMaterial', name, filePath, volume: 1 })
     return true
+  })
+
+  ipcMain.handle(IPC.chooseAudio, async () => {
+    const result = await dialog.showOpenDialog({
+      title: '音声ファイルを選択',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: '音声', extensions: ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus'] }]
+    })
+    if (result.canceled) return []
+    return result.filePaths.map((filePath) => ({
+      name: basename(filePath, extname(filePath)),
+      filePath
+    }))
   })
 
   ipcMain.handle(IPC.chooseStill, async () => {

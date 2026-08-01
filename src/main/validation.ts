@@ -113,6 +113,25 @@ const playbackCommandValidators = {
   removePhoto: (value) => typeof value.id === 'string',
   removePhotos: (value) => isStringArray(value.ids),
   addSlideshow: (value) => typeof value.name === 'string',
+  addLocalBgmPlaylist: (value) => typeof value.name === 'string',
+  renameLocalBgmPlaylist: (value) =>
+    typeof value.playlistId === 'string' && typeof value.name === 'string',
+  removeLocalBgmPlaylist: (value) => typeof value.playlistId === 'string',
+  addLocalBgmTracks: (value) =>
+    typeof value.playlistId === 'string' &&
+    Array.isArray(value.tracks) &&
+    value.tracks.every(
+      (track) =>
+        isRecord(track) && typeof track.name === 'string' && typeof track.filePath === 'string'
+    ),
+  removeLocalBgmTrack: (value) =>
+    typeof value.playlistId === 'string' && typeof value.trackId === 'string',
+  reorderLocalBgmTracks: (value) =>
+    typeof value.playlistId === 'string' && isStringArray(value.trackIds),
+  reloadLocalBgmPlaylist: (value) => typeof value.playlistId === 'string',
+  setBgmOutputDevice: (value) => value.deviceId === null || typeof value.deviceId === 'string',
+  setLocalBgmCrossfade: (value) =>
+    (value.mode === 'crossfade' || value.mode === 'gap') && isFiniteNumber(value.fadeMs),
   setEditingSlideshow: (value) => typeof value.materialId === 'string',
   renameMaterial: (value) =>
     ['slideshow', 'video', 'still'].includes(String(value.materialType)) &&

@@ -85,6 +85,33 @@ export interface Materials {
   stills: StillMaterial[]
 }
 
+export interface LocalBgmTrack {
+  id: string
+  name: string
+  filePath: string
+  reloadToken?: number
+}
+
+export interface LocalBgmPlaylist {
+  id: string
+  name: string
+  tracks: LocalBgmTrack[]
+}
+
+export interface LocalBgmState {
+  playlists: LocalBgmPlaylist[]
+  outputDeviceId: string | null
+  crossfadeMode: 'crossfade' | 'gap'
+  fadeMs: number
+}
+
+export const DEFAULT_LOCAL_BGM: LocalBgmState = {
+  playlists: [],
+  outputDeviceId: null,
+  crossfadeMode: 'crossfade',
+  fadeMs: 2000
+}
+
 export type CueBgm =
   | { mode: 'continue' }
   | { mode: 'play'; uri: string; fadeMs: number }
@@ -141,6 +168,7 @@ export type PendingTransition = { type: 'fireCue'; cueId: string } | { type: 'st
 export interface AppState {
   outputLocked: boolean
   materials: Materials
+  localBgm: LocalBgmState
   cues: Cue[]
   standbyStillId: string | null
   audioOutputDeviceId: string | null
@@ -236,6 +264,7 @@ export interface ProjectFileV1 extends ProjectStateV1 {
 
 export interface ProjectState {
   materials: Materials
+  localBgm: LocalBgmState
   cues: Cue[]
   standbyStillId: string | null
   audioOutputDeviceId: string | null
@@ -284,6 +313,7 @@ export const IPC = {
   choosePhotosFolder: 'photos:choose-folder',
   chooseMaskImage: 'app:choose-mask-image',
   chooseVideo: 'app:choose-video',
+  chooseAudio: 'app:choose-audio',
   chooseStill: 'app:choose-still',
   openExternalPlayer: 'app:open-external-player',
   mediaEnded: 'cue:media-ended',
@@ -349,6 +379,19 @@ export type PlaybackCommand =
   | { type: 'removePhoto'; id: string }
   | { type: 'removePhotos'; ids: string[] }
   | { type: 'addSlideshow'; name: string }
+  | { type: 'addLocalBgmPlaylist'; name: string }
+  | { type: 'renameLocalBgmPlaylist'; playlistId: string; name: string }
+  | { type: 'removeLocalBgmPlaylist'; playlistId: string }
+  | {
+      type: 'addLocalBgmTracks'
+      playlistId: string
+      tracks: { name: string; filePath: string }[]
+    }
+  | { type: 'removeLocalBgmTrack'; playlistId: string; trackId: string }
+  | { type: 'reorderLocalBgmTracks'; playlistId: string; trackIds: string[] }
+  | { type: 'reloadLocalBgmPlaylist'; playlistId: string }
+  | { type: 'setBgmOutputDevice'; deviceId: string | null }
+  | { type: 'setLocalBgmCrossfade'; mode: 'crossfade' | 'gap'; fadeMs: number }
   | { type: 'setEditingSlideshow'; materialId: string }
   | {
       type: 'renameMaterial'

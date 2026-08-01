@@ -19,6 +19,7 @@ import {
   migrateBlackStillMaterials,
   migrateV1State,
   migrateVideoFades,
+  normalizeLocalBgm,
   normalizeCueBgm,
   type V1SavedState
 } from '../shared/migration'
@@ -89,6 +90,7 @@ function restoreV2State(saved: SavedAppState): AppState {
     ...migrated,
     outputLocked: false,
     stageAspect: saved.stageAspect === '16:9' ? '16:9' : 'free',
+    localBgm: normalizeLocalBgm(saved.localBgm),
     materials: {
       ...migrated.materials,
       videos: migrated.materials.videos.map((material) => ({
@@ -163,6 +165,9 @@ export class AppStateStore {
       ...this.state.materials.videos.map((material) => material.filePath),
       ...this.state.materials.stills.flatMap((material) =>
         material.kind === 'image' ? [material.filePath] : []
+      ),
+      ...this.state.localBgm.playlists.flatMap((playlist) =>
+        playlist.tracks.map((track) => track.filePath)
       )
     ]
     if (this.state.mask.imagePath) paths.push(this.state.mask.imagePath)
@@ -437,6 +442,77 @@ export class AppStateStore {
         this.state.editingSlideshowId = material.id
         break
       }
+      case 'addLocalBgmPlaylist':
+        this.state.localBgm.playlists.push({
+          id: crypto.randomUUID(),
+          name: command.name,
+          tracks: []
+        })
+        break
+      case 'renameLocalBgmPlaylist': {
+        const playlist = this.state.localBgm.playlists.find(
+          (item) => item.id === command.playlistId
+        )
+        if (playlist) playlist.name = command.name
+        break
+      }
+      case 'removeLocalBgmPlaylist':
+        if (this.state.localBgm.playlists.some((item) => item.id === command.playlistId)) {
+          this.state.localBgm.playlists = this.state.localBgm.playlists.filter(
+            (item) => item.id !== command.playlistId
+          )
+        }
+        break
+      case 'addLocalBgmTracks': {
+        const playlist = this.state.localBgm.playlists.find(
+          (item) => item.id === command.playlistId
+        )
+        if (playlist) {
+          playlist.tracks.push(
+            ...command.tracks.map((track) => ({ ...track, id: crypto.randomUUID() }))
+          )
+        }
+        break
+      }
+      case 'removeLocalBgmTrack': {
+        const playlist = this.state.localBgm.playlists.find(
+          (item) => item.id === command.playlistId
+        )
+        if (playlist?.tracks.some((track) => track.id === command.trackId)) {
+          playlist.tracks = playlist.tracks.filter((track) => track.id !== command.trackId)
+        }
+        break
+      }
+      case 'reorderLocalBgmTracks': {
+        const playlist = this.state.localBgm.playlists.find(
+          (item) => item.id === command.playlistId
+        )
+        if (playlist) playlist.tracks = this.reorderByIds(playlist.tracks, command.trackIds)
+        break
+      }
+      case 'reloadLocalBgmPlaylist':
+        this.state.localBgm.playlists = this.state.localBgm.playlists.map((playlist) =>
+          playlist.id === command.playlistId
+            ? {
+                ...playlist,
+                tracks: playlist.tracks.map((track) => ({
+                  ...track,
+                  reloadToken: (track.reloadToken ?? 0) + 1
+                }))
+              }
+            : playlist
+        )
+        break
+      case 'setBgmOutputDevice':
+        this.state.localBgm.outputDeviceId = command.deviceId
+        break
+      case 'setLocalBgmCrossfade':
+        this.state.localBgm.crossfadeMode =
+          command.mode === 'crossfade' || command.mode === 'gap'
+            ? command.mode
+            : this.state.localBgm.crossfadeMode
+        this.state.localBgm.fadeMs = Math.min(10_000, Math.max(0, command.fadeMs))
+        break
       case 'setEditingSlideshow':
         if (
           this.state.materials.slideshows.some((material) => material.id === command.materialId)

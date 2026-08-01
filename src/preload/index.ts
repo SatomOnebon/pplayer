@@ -41,6 +41,8 @@ const api = {
   getFilePath: (file: File): string => webUtils.getPathForFile(file),
   chooseMaskImage: (): Promise<void> => ipcRenderer.invoke(IPC.chooseMaskImage),
   chooseVideo: (): Promise<boolean> => ipcRenderer.invoke(IPC.chooseVideo),
+  chooseAudio: (): Promise<{ name: string; filePath: string }[]> =>
+    ipcRenderer.invoke(IPC.chooseAudio),
   chooseStill: (): Promise<boolean> => ipcRenderer.invoke(IPC.chooseStill),
   openExternalPlayer: (filePath: string): Promise<string> =>
     ipcRenderer.invoke(IPC.openExternalPlayer, filePath),

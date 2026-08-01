@@ -5,6 +5,7 @@ import {
   IPC,
   type Cue,
   type FitMode,
+  type LocalBgmState,
   type MaskConfig,
   type Materials,
   type PhotoItem,
@@ -23,6 +24,7 @@ import {
   migrateV1Project,
   migrateVideoFades,
   normalizeCueBgm,
+  normalizeLocalBgm,
   type LegacyBlackStillMaterial
 } from '../shared/migration'
 import { normalizeFtbDurationMs } from '../shared/masterFtb'
@@ -48,6 +50,39 @@ function parseStageAspect(value: unknown): StageAspect | null {
 function parseMasterVolume(value: unknown): number | null {
   if (value === undefined) return 1
   return isFiniteNumber(value) && value >= 0 && value <= 1 ? value : null
+}
+
+function parseLocalBgm(value: unknown): LocalBgmState | null {
+  if (value === undefined) return normalizeLocalBgm(undefined)
+  if (!isRecord(value)) return null
+  if (
+    (value.playlists !== undefined &&
+      (!Array.isArray(value.playlists) ||
+        value.playlists.some(
+          (playlist) =>
+            !isRecord(playlist) ||
+            typeof playlist.id !== 'string' ||
+            typeof playlist.name !== 'string' ||
+            !Array.isArray(playlist.tracks) ||
+            playlist.tracks.some(
+              (track) =>
+                !isRecord(track) ||
+                typeof track.id !== 'string' ||
+                typeof track.name !== 'string' ||
+                typeof track.filePath !== 'string'
+            )
+        ))) ||
+    (value.outputDeviceId !== undefined &&
+      value.outputDeviceId !== null &&
+      typeof value.outputDeviceId !== 'string') ||
+    (value.crossfadeMode !== undefined &&
+      value.crossfadeMode !== 'crossfade' &&
+      value.crossfadeMode !== 'gap') ||
+    (value.fadeMs !== undefined && !isFiniteNumber(value.fadeMs))
+  ) {
+    return null
+  }
+  return normalizeLocalBgm(value)
 }
 
 function parseTiming(value: unknown): TimingConfig | null {
@@ -297,12 +332,14 @@ export function parseProject(value: unknown): ProjectState {
   const mask = parseMask(value.mask)
   const stageAspect = parseStageAspect(value.stageAspect)
   const masterVolume = parseMasterVolume(value.masterVolume)
+  const localBgm = parseLocalBgm(value.localBgm)
   const cues = Array.isArray(value.cues) ? value.cues.map(parseCue) : []
   if (
     !parsedMaterials ||
     !mask ||
     !stageAspect ||
     masterVolume === null ||
+    localBgm === null ||
     cues.some((cue) => !cue) ||
     (value.standbyStillId !== null && typeof value.standbyStillId !== 'string') ||
     (value.audioOutputDeviceId !== null && typeof value.audioOutputDeviceId !== 'string') ||
@@ -343,6 +380,7 @@ export function parseProject(value: unknown): ProjectState {
       : (materials.slideshows[0]?.id ?? null)
   return migrateVideoFades({
     materials,
+    localBgm,
     cues: migrated.cues,
     standbyStillId: migrated.standbyStillId,
     audioOutputDeviceId: value.audioOutputDeviceId,
@@ -379,6 +417,7 @@ export function registerProjectIpc(stateStore: AppStateStore): void {
       try {
         const {
           materials,
+          localBgm,
           cues,
           standbyStillId,
           audioOutputDeviceId,
@@ -400,6 +439,13 @@ export function registerProjectIpc(stateStore: AppStateStore): void {
           app: 'pplayer',
           version: 2,
           materials: persistentMaterials,
+          localBgm: {
+            ...localBgm,
+            playlists: localBgm.playlists.map((playlist) => ({
+              ...playlist,
+              tracks: playlist.tracks.map(({ reloadToken: _reloadToken, ...track }) => track)
+            }))
+          },
           cues,
           standbyStillId,
           audioOutputDeviceId,

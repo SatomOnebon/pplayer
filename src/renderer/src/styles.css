@@ -191,15 +191,18 @@ button:disabled {
 
 .cue-bgm {
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
-  gap: 8px;
+  gap: 6px 8px;
   padding: 2px 0 4px;
   grid-column: 4 / 8;
   grid-row: 4;
+  min-width: 0;
 }
 
 .cue-bgm label {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 5px;
   color: #a7afbc;
@@ -211,11 +214,12 @@ button:disabled {
 }
 
 .cue-bgm-uri {
-  flex: 1;
+  flex: 1 1 160px;
+  min-width: 0;
 }
 
 .cue-bgm-uri input {
-  min-width: 100px;
+  min-width: 0;
   width: 100%;
 }
 

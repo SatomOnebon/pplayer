@@ -1,0 +1,12 @@
+node_modules/
+dist/
+out/
+*.log
+*.log*
+.eslintcache
+.DS_Store
+.env
+.env.*
+
+# Phase 0 検証用の使い捨てスパイク（ローカル参照専用）
+spike/

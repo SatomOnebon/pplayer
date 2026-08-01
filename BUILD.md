@@ -13,12 +13,12 @@ Cursor / Codex など）にビルドを任せる**ための実行可能な手順
 
 ## 0. 前提環境
 
-| 項目 | 要件 |
-| --- | --- |
-| OS | **macOS（Apple Silicon で確認）**。Intel Mac / Windows / Linux は未検証。 |
-| Node.js | **20 以上**（開発は Node 22.18 / npm 10.9 で確認） |
-| Python 3 | **Spotify BGM を使う場合のみ**必要（VMP 署名に使用） |
-| ネットワーク | 必要（castLabs 版 Electron を GitHub から取得） |
+| 項目         | 要件                                                                      |
+| ------------ | ------------------------------------------------------------------------- |
+| OS           | **macOS（Apple Silicon で確認）**。Intel Mac / Windows / Linux は未検証。 |
+| Node.js      | **20 以上**（開発は Node 22.18 / npm 10.9 で確認）                        |
+| Python 3     | **Spotify BGM を使う場合のみ**必要（VMP 署名に使用）                      |
+| ネットワーク | 必要（castLabs 版 Electron を GitHub から取得）                           |
 
 確認:
 
@@ -77,7 +77,8 @@ npm run build:mac
 - `pplayer-<version>-arm64-mac.zip`
 - `mac-arm64/pplayer.app` — アプリ本体
 
-**この app の制約**: 未署名 Widevine のため **Spotify BGM は数秒でスキップ**します。
+**この app の制約**: `PPLAYER_SKIP_VMP=1` ビルドでは **BGM パネルの Spotify タブは非表示**になり、
+ローカル音源BGM のみになります（未署名 Widevine では Spotify を再生できないため、混乱を避けて隠す）。
 **ローカル音源BGM・映像ポン出し・Stream Deck 連携・MP4 書き出し等はすべて動作**します。
 
 → [動作確認](#3-動作確認) へ。
@@ -161,14 +162,14 @@ Widevine CDM は castLabs Electron が**初回起動時に自動ダウンロー�
 
 ## 4. トラブルシュート
 
-| 症状 | 対処 |
-| --- | --- |
-| `npm install` が `git+ssh://git@github.com/...` で失敗 | [共通セットアップ](#2-共通セットアップab-とも実行)の `insteadOf` 設定を入れて再実行 |
-| `afterSign` で EVS 認証エラー / 署名失敗 | `python3 -m castlabs_evs.account -n refresh`。直らなければ再ログイン。Spotify 不要なら **Path A（`PPLAYER_SKIP_VMP=1`）** に切替 |
-| Spotify で各曲が数秒で飛ぶ | VMP 未署名。Path B（B-2〜B-4）で署名し直す（`verify-pkg` が streaming valid になること） |
-| 起動時「開発元を確認できません」 | ad-hoc 署名のため。右クリック →「開く」で許可 |
-| `python3` が無い / `castlabs_evs` が無い | Path A（署名スキップ）でビルドするか、`pip install --user castlabs-evs` |
-| Intel Mac / Windows / Linux | 未検証。electron-builder の対象を変える必要あり（`build:win` / `build:linux` は雛形のみ・未確認） |
+| 症状                                                   | 対処                                                                                                                             |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install` が `git+ssh://git@github.com/...` で失敗 | [共通セットアップ](#2-共通セットアップab-とも実行)の `insteadOf` 設定を入れて再実行                                              |
+| `afterSign` で EVS 認証エラー / 署名失敗               | `python3 -m castlabs_evs.account -n refresh`。直らなければ再ログイン。Spotify 不要なら **Path A（`PPLAYER_SKIP_VMP=1`）** に切替 |
+| Spotify で各曲が数秒で飛ぶ                             | VMP 未署名。Path B（B-2〜B-4）で署名し直す（`verify-pkg` が streaming valid になること）                                         |
+| 起動時「開発元を確認できません」                       | ad-hoc 署名のため。右クリック →「開く」で許可                                                                                    |
+| `python3` が無い / `castlabs_evs` が無い               | Path A（署名スキップ）でビルドするか、`pip install --user castlabs-evs`                                                          |
+| Intel Mac / Windows / Linux                            | 未検証。electron-builder の対象を変える必要あり（`build:win` / `build:linux` は雛形のみ・未確認）                                |
 
 ---
 

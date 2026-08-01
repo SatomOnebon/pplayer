@@ -11,6 +11,11 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
+    // Spotify BGM は Widevine（VMP 署名）を要する。PPLAYER_SKIP_VMP=1 の署名なしビルドでは
+    // Spotify UI を出しても再生できないため、コンパイル時に無効化してタブごと隠す。
+    define: {
+      __SPOTIFY_ENABLED__: JSON.stringify(process.env.PPLAYER_SKIP_VMP !== '1')
+    },
     plugins: [react()],
     build: {
       rollupOptions: {

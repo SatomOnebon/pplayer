@@ -58,7 +58,7 @@ npm run dev
   npm run build:mac        # → dist/pplayer-1.0.0.dmg 等
   ```
 
-  （この app では Spotify BGM は数秒でスキップしますが、ローカルBGM・映像・Stream Deck 等は動作します。）
+  （この app では BGM パネルの Spotify タブは非表示になり、ローカル音源BGM のみになります。映像・Stream Deck 等はすべて動作します。）
 
 - **Spotify BGM も使う**場合は Widevine 有効化のため **castLabs 版 Electron** と **VMP 署名**が必要です
   （castLabs EVS の無料アカウントが要ります）。詳細は [`WIDEVINE.md`](./WIDEVINE.md) / [`BUILD.md`](./BUILD.md):

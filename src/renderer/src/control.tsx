@@ -115,6 +115,11 @@ export function Control(): React.JSX.Element {
 
   useEffect(() => {
     if (!state) return
+    localBgmPlayer.setCrossfade(state.localBgm.crossfadeMode, state.localBgm.fadeMs)
+  }, [state?.localBgm.crossfadeMode, state?.localBgm.fadeMs])
+
+  useEffect(() => {
+    if (!state) return
     const id = state.activeCueId
     if (prevCueIdRef.current === undefined) {
       prevCueIdRef.current = id

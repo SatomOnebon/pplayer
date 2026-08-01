@@ -24,10 +24,6 @@ export function LocalBgmSettings({
     }
   }, [localBgm.playlists, selectedPlaylistId])
 
-  useEffect(() => {
-    localBgmPlayer.setCrossfade(localBgm.crossfadeMode, localBgm.fadeMs)
-  }, [localBgm.crossfadeMode, localBgm.fadeMs])
-
   const playSelected = (): void => {
     if (!selectedPlaylist) return
     void spotifyPlayer.transitionToBgm({ mode: 'stop', fadeMs: localBgm.fadeMs })
@@ -48,7 +44,7 @@ export function LocalBgmSettings({
       </div>
       {variant === 'strip' &&
         (localBgm.playlists.length === 0 ? (
-          <p className="local-bgm-empty">上のライブラリでプレイリストを作成してください</p>
+          <p className="local-bgm-empty">準備モードの「BGM」でプレイリストを作成してください</p>
         ) : (
           <>
             <label className="audio-device-field">

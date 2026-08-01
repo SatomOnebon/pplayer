@@ -276,7 +276,7 @@ export function setVolume(volume: number): void {
 
 export function setMasterGain(gain: number): void {
   masterGain = Math.min(1, Math.max(0, gain))
-  if (snapshot.playing && !transitioning) {
+  if (snapshot.playing && !transitioning && !automaticTransition) {
     decks[activeDeck].volume = targetVolume * masterGain
   }
 }

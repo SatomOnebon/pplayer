@@ -284,6 +284,14 @@ export function CueListPanel({
       .catch(() => setPlaylists([]))
   }, [spotifySettings?.connected])
 
+  useEffect(() => {
+    const cueIds = new Set(cues.map((cue) => cue.id))
+    setExpandedCues((current) => {
+      if ([...current].every((id) => cueIds.has(id))) return current
+      return new Set([...current].filter((id) => cueIds.has(id)))
+    })
+  }, [cues])
+
   const setCueBgm = (cueId: string, bgm: CueBgm): void => {
     send({ type: 'setCueBgm', cueId, bgm })
   }
@@ -475,8 +483,11 @@ export function CueListPanel({
                         }}
                         onBlur={(event) => {
                           const label = event.currentTarget.value.trim()
-                          if (label && label !== cue.label)
-                            send({ type: 'renameCue', cueId: cue.id, label })
+                          if (!label || label === cue.label) {
+                            event.currentTarget.value = cue.label
+                            return
+                          }
+                          send({ type: 'renameCue', cueId: cue.id, label })
                         }}
                       />
                     </label>

@@ -250,7 +250,14 @@ async function rampVolume(to: number, ms: number, token: number): Promise<void> 
       await wait(Math.min(50, ms))
     }
   } finally {
-    if (activeRampToken === token) activeRampToken = null
+    if (activeRampToken === token) {
+      activeRampToken = null
+      if (fadeToken === token && player) {
+        const effective = snapshot.volume * masterGain
+        actualVolume = effective
+        void player.setVolume(effective)
+      }
+    }
   }
 }
 

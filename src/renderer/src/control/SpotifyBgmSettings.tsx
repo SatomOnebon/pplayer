@@ -5,7 +5,11 @@ import * as localBgmPlayer from './lib/localBgmPlayer'
 import * as spotifyPlayer from './lib/spotifyPlayer'
 import { setActiveBgmSource } from './lib/bgmSource'
 
-export function SpotifyBgmSettings(): React.JSX.Element {
+export function SpotifyBgmSettings({
+  variant
+}: {
+  variant: 'strip' | 'settings'
+}): React.JSX.Element {
   const [settings, setSettings] = useState<SpotifySettingsState | null>(null)
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([])
   const [playlistError, setPlaylistError] = useState<string | null>(null)
@@ -81,156 +85,166 @@ export function SpotifyBgmSettings(): React.JSX.Element {
         </div>
       </div>
       {!settings.connected ? (
-        <>
-          <label className="remote-field">
-            <span>Client ID</span>
-            <input
-              type="text"
-              value={clientId}
-              onChange={(event) => setClientId(event.target.value)}
-              onBlur={() => void saveClientId()}
-              disabled={settings.authorizing}
-            />
-          </label>
-          <p className="spotify-client-note">
-            Spotify Developer Dashboard で自分のアプリを登録し、Redirect URI に
-            http://127.0.0.1:8723/callback を追加して Client ID を入力してください
-          </p>
-          <div className="spotify-actions">
-            <button
-              type="button"
-              disabled={settings.authorizing || !clientId.trim()}
-              title={!clientId.trim() ? '先に Client ID を入力' : undefined}
-              onClick={() => void authorize()}
-            >
-              Spotify と連携
-            </button>
-          </div>
-          {settings.authorizing && (
-            <p className="power-status is-pending">▲ 連携中…（ブラウザで許可してください）</p>
-          )}
-          {settings.error && (
-            <p className="remote-error" role="alert">
-              {settings.error}
+        variant === 'strip' ? (
+          <p className="spotify-client-note">準備モードで Spotify と連携してください</p>
+        ) : (
+          <>
+            <label className="remote-field">
+              <span>Client ID</span>
+              <input
+                type="text"
+                value={clientId}
+                onChange={(event) => setClientId(event.target.value)}
+                onBlur={() => void saveClientId()}
+                disabled={settings.authorizing}
+              />
+            </label>
+            <p className="spotify-client-note">
+              Spotify Developer Dashboard で自分のアプリを登録し、Redirect URI に
+              http://127.0.0.1:8723/callback を追加して Client ID を入力してください
             </p>
-          )}
-        </>
+            <div className="spotify-actions">
+              <button
+                type="button"
+                disabled={settings.authorizing || !clientId.trim()}
+                title={!clientId.trim() ? '先に Client ID を入力' : undefined}
+                onClick={() => void authorize()}
+              >
+                Spotify と連携
+              </button>
+            </div>
+            {settings.authorizing && (
+              <p className="power-status is-pending">▲ 連携中…（ブラウザで許可してください）</p>
+            )}
+          </>
+        )
       ) : (
         <>
           <p className={`power-status ${snapshot.ready ? 'is-active' : 'is-pending'}`}>
             {snapshot.ready ? '● BGM 準備完了' : '▲ デバイス準備中…'}
           </p>
-          <label className="audio-device-field">
-            <span>プレイリスト</span>
-            <select
-              value={settings.lastPlaylistUri ?? ''}
-              onChange={(event) =>
-                void window.api
-                  .setSpotifySettings({ lastPlaylistUri: event.target.value || null })
-                  .then(setSettings)
-              }
-            >
-              <option value="">選択してください</option>
-              {hasDirectSelection && (
-                <option value={settings.lastPlaylistUri ?? ''}>
-                  （直接指定）{settings.lastPlaylistUri}
-                </option>
+          {variant === 'strip' ? (
+            <>
+              <label className="audio-device-field">
+                <span>プレイリスト</span>
+                <select
+                  value={settings.lastPlaylistUri ?? ''}
+                  onChange={(event) =>
+                    void window.api
+                      .setSpotifySettings({ lastPlaylistUri: event.target.value || null })
+                      .then(setSettings)
+                  }
+                >
+                  <option value="">選択してください</option>
+                  {hasDirectSelection && (
+                    <option value={settings.lastPlaylistUri ?? ''}>
+                      （直接指定）{settings.lastPlaylistUri}
+                    </option>
+                  )}
+                  {playlists.map((playlist) => (
+                    <option key={playlist.uri} value={playlist.uri}>
+                      {playlist.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="spotify-transport">
+                <button
+                  type="button"
+                  disabled={!snapshot.ready || !settings.lastPlaylistUri}
+                  onClick={() => {
+                    if (settings.lastPlaylistUri) {
+                      void localBgmPlayer.stopWithFade(2_000)
+                      spotifyPlayer.activate()
+                      void spotifyPlayer.playContext(settings.lastPlaylistUri)
+                    }
+                  }}
+                >
+                  ▶ 再生
+                </button>
+                <button
+                  type="button"
+                  disabled={!snapshot.ready}
+                  onClick={spotifyPlayer.previousTrack}
+                >
+                  前へ
+                </button>
+                <button
+                  type="button"
+                  disabled={!snapshot.ready}
+                  onClick={() => {
+                    if (snapshot.paused) {
+                      void localBgmPlayer.stopWithFade(2_000)
+                      setActiveBgmSource('spotify')
+                    }
+                    spotifyPlayer.togglePlay()
+                  }}
+                >
+                  {snapshot.paused ? '再生' : '一時停止'}
+                </button>
+                <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.nextTrack}>
+                  次へ
+                </button>
+              </div>
+              <div className="spotify-now-playing">
+                <span>現在の曲</span>
+                <strong>{snapshot.trackName ?? '—'}</strong>
+                <small>{snapshot.artistName ?? '—'}</small>
+              </div>
+              <label className="spotify-volume">
+                <span>BGM 音量 {Math.round(snapshot.volume * 100)}%</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(snapshot.volume * 100)}
+                  onChange={(event) => spotifyPlayer.setVolume(Number(event.target.value) / 100)}
+                />
+              </label>
+            </>
+          ) : (
+            <>
+              <div className="remote-token-row">
+                <label className="remote-field">
+                  <span>またはURL/URIを直接指定</span>
+                  <input
+                    type="text"
+                    value={directContext}
+                    placeholder="https://open.spotify.com/playlist/... または spotify:playlist:..."
+                    onChange={(event) => {
+                      setDirectContext(event.target.value)
+                      setDirectContextError(null)
+                    }}
+                  />
+                </label>
+                <button type="button" onClick={setDirectContextUri}>
+                  セット
+                </button>
+              </div>
+              {directContextError && (
+                <p className="remote-error" role="alert">
+                  {directContextError}
+                </p>
               )}
-              {playlists.map((playlist) => (
-                <option key={playlist.uri} value={playlist.uri}>
-                  {playlist.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="remote-token-row">
-            <label className="remote-field">
-              <span>またはURL/URIを直接指定</span>
-              <input
-                type="text"
-                value={directContext}
-                placeholder="https://open.spotify.com/playlist/... または spotify:playlist:..."
-                onChange={(event) => {
-                  setDirectContext(event.target.value)
-                  setDirectContextError(null)
-                }}
-              />
-            </label>
-            <button type="button" onClick={setDirectContextUri}>
-              セット
-            </button>
-          </div>
-          {directContextError && (
-            <p className="remote-error" role="alert">
-              {directContextError}
-            </p>
-          )}
-          <div className="spotify-transport">
-            <button
-              type="button"
-              disabled={!snapshot.ready || !settings.lastPlaylistUri}
-              onClick={() => {
-                if (settings.lastPlaylistUri) {
-                  void localBgmPlayer.stopWithFade(2_000)
-                  spotifyPlayer.activate()
-                  void spotifyPlayer.playContext(settings.lastPlaylistUri)
-                }
-              }}
-            >
-              ▶ 再生
-            </button>
-            <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.previousTrack}>
-              前へ
-            </button>
-            <button
-              type="button"
-              disabled={!snapshot.ready}
-              onClick={() => {
-                if (snapshot.paused) {
-                  void localBgmPlayer.stopWithFade(2_000)
-                  setActiveBgmSource('spotify')
-                }
-                spotifyPlayer.togglePlay()
-              }}
-            >
-              {snapshot.paused ? '再生' : '一時停止'}
-            </button>
-            <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.nextTrack}>
-              次へ
-            </button>
-          </div>
-          <div className="spotify-now-playing">
-            <span>現在の曲</span>
-            <strong>{snapshot.trackName ?? '—'}</strong>
-            <small>{snapshot.artistName ?? '—'}</small>
-          </div>
-          <label className="spotify-volume">
-            <span>BGM 音量 {Math.round(snapshot.volume * 100)}%</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(snapshot.volume * 100)}
-              onChange={(event) => spotifyPlayer.setVolume(Number(event.target.value) / 100)}
-            />
-          </label>
-          <div className="spotify-actions">
-            <button type="button" onClick={loadPlaylists}>
-              再読み込み
-            </button>
-            <button
-              type="button"
-              onClick={() => void window.api.deauthorizeSpotify().then(setSettings)}
-            >
-              連携解除
-            </button>
-          </div>
-          {(settings.error || playlistError || snapshot.error) && (
-            <p className="remote-error" role="alert">
-              {settings.error ?? playlistError ?? snapshot.error}
-            </p>
+              <div className="spotify-actions">
+                <button type="button" onClick={loadPlaylists}>
+                  再読み込み
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void window.api.deauthorizeSpotify().then(setSettings)}
+                >
+                  連携解除
+                </button>
+              </div>
+            </>
           )}
         </>
+      )}
+      {(settings.error || playlistError || snapshot.error) && (
+        <p className="remote-error" role="alert">
+          {settings.error ?? playlistError ?? snapshot.error}
+        </p>
       )}
     </section>
   )

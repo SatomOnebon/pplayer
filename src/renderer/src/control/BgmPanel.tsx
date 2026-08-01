@@ -5,10 +5,12 @@ import { SpotifyBgmSettings } from './SpotifyBgmSettings'
 
 export function BgmPanel({
   localBgm,
-  send
+  send,
+  variant
 }: {
   localBgm: LocalBgmState
   send: (command: PlaybackCommand) => void
+  variant: 'strip' | 'settings'
 }): React.JSX.Element {
   const [source, setSource] = useState<'local' | 'spotify'>('local')
   // Spotify 無効ビルド（PPLAYER_SKIP_VMP=1）ではタブ・パネルごと出さず、ローカル固定。
@@ -38,9 +40,9 @@ export function BgmPanel({
         )}
       </div>
       {activeSource === 'local' ? (
-        <LocalBgmSettings localBgm={localBgm} send={send} />
+        <LocalBgmSettings localBgm={localBgm} send={send} variant={variant} />
       ) : (
-        <SpotifyBgmSettings />
+        <SpotifyBgmSettings variant={variant} />
       )}
     </div>
   )

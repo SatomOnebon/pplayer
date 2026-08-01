@@ -420,7 +420,7 @@ export function Control(): React.JSX.Element {
             />
           </div>
           <aside className="show-bgm" aria-label="BGM 操作">
-            <BgmPanel localBgm={state.localBgm} send={send} />
+            <BgmPanel localBgm={state.localBgm} send={send} variant="strip" />
           </aside>
         </div>
       ) : (
@@ -480,7 +480,7 @@ export function Control(): React.JSX.Element {
             {setupSection === 'bgm' && (
               <>
                 <LocalBgmLibrary localBgm={state.localBgm} send={send} onMessage={showMessage} />
-                <BgmPanel localBgm={state.localBgm} send={send} />
+                <BgmPanel localBgm={state.localBgm} send={send} variant="settings" />
               </>
             )}
             {setupSection === 'stage' && (

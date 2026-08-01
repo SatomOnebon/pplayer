@@ -135,7 +135,7 @@ button:disabled {
   background: #181c23;
   cursor: pointer;
   gap: 6px;
-  grid-template-columns: 14px 22px 64px minmax(70px, 1fr) 36px minmax(112px, 140px) 40px;
+  grid-template-columns: 14px 22px 64px minmax(70px, 1fr) 36px minmax(112px, 140px) 36px 40px;
 }
 
 .cue-row.has-details {
@@ -147,7 +147,7 @@ button:disabled {
   align-items: end;
   gap: 8px;
   padding: 2px 0 4px;
-  grid-column: 4 / 8;
+  grid-column: 4 / 9;
   grid-row: 2;
 }
 
@@ -172,7 +172,7 @@ button:disabled {
   align-items: end;
   gap: 8px;
   padding: 2px 0 4px;
-  grid-column: 4 / 8;
+  grid-column: 4 / 9;
   grid-row: 3;
 }
 
@@ -258,13 +258,30 @@ button:disabled {
 .cue-copy {
   display: flex;
   min-width: 0;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
 }
 
 .cue-copy > strong {
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cue-bgm-summary {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #9aa4b2;
+  background: #252b35;
+  font-size: 10px;
+  line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -272,6 +289,8 @@ button:disabled {
 .cue-markers {
   display: flex;
   flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 5px;
 }
 
@@ -333,10 +352,14 @@ button:disabled {
   min-height: 36px;
 }
 
-.cue-row > button:last-child {
+.cue-expand {
+  grid-column: 7;
+}
+
+.cue-row > .cue-remove {
   min-width: 40px;
   min-height: 36px;
-  grid-column: 7;
+  grid-column: 8;
 }
 
 .confirming {

@@ -46,6 +46,15 @@ function cueThumbnailSource(cue: Cue, materials: Materials): string | null {
   return material ? toThumbUrl(material.filePath, 128, material.reloadToken) : null
 }
 
+function cueBgmSummary(cue: Cue, localPlaylists: LocalBgmPlaylist[]): string {
+  const bgm = cue.bgm
+  if (!bgm || bgm.mode === 'continue') return '継続'
+  if (bgm.mode === 'stop') return 'BGM 停止'
+  if (bgm.source === 'spotify') return '♪ Spotify'
+  const playlist = localPlaylists.find((item) => item.id === bgm.playlistId)
+  return `♪ ${playlist?.name ?? 'ローカル'}`
+}
+
 function CueBgmControl({
   cue,
   spotifyPlaylists,
@@ -252,6 +261,7 @@ export function CueListPanel({
   const options = useMemo(() => materialOptions(materials), [materials])
   const [selectedMaterial, setSelectedMaterial] = useState('black:')
   const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null)
+  const [expandedCues, setExpandedCues] = useState<Set<string>>(new Set())
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([])
   const [spotifySettings, setSpotifySettings] = useState<SpotifySettingsState | null>(null)
   const draggedId = useRef<string | null>(null)
@@ -276,6 +286,15 @@ export function CueListPanel({
 
   const setCueBgm = (cueId: string, bgm: CueBgm): void => {
     send({ type: 'setCueBgm', cueId, bgm })
+  }
+
+  const toggleExpand = (id: string): void => {
+    setExpandedCues((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   const addCue = (): void => {
@@ -348,10 +367,11 @@ export function CueListPanel({
         {cues.map((cue, index) => {
           const isActive = cue.id === activeCueId
           const isArmed = index === armedCueIndex
+          const isExpanded = expandedCues.has(cue.id)
           return (
             <li
               key={cue.id}
-              className={`cue-row has-details${isActive ? ' is-active' : ''}${isArmed ? ' is-armed' : ''}`}
+              className={`cue-row${isExpanded ? ' has-details' : ''}${isActive ? ' is-active' : ''}${isArmed ? ' is-armed' : ''}`}
               draggable
               title="シングルクリック: 次に GO するキュー / ダブルクリック: すぐ発火"
               onClick={() => send({ type: 'armCue', id: cue.id })}
@@ -382,6 +402,9 @@ export function CueListPanel({
                   </span>
                   {isActive && <span className="running-marker">再生中</span>}
                   {isArmed && <span className="armed-marker">次</span>}
+                  {!isExpanded && (
+                    <span className="cue-bgm-summary">{cueBgmSummary(cue, localPlaylists)}</span>
+                  )}
                 </div>
               </div>
               <button
@@ -422,7 +445,20 @@ export function CueListPanel({
                 </select>
               )}
               <button
-                className={removeConfirmId === cue.id ? 'danger confirming' : 'icon-button'}
+                className="icon-button cue-expand"
+                type="button"
+                aria-expanded={isExpanded}
+                aria-label={`${cue.label}の編集項目を${isExpanded ? '閉じる' : '開く'}`}
+                title={isExpanded ? '編集を閉じる' : '編集を開く'}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  toggleExpand(cue.id)
+                }}
+              >
+                {isExpanded ? '⌃' : '⌄'}
+              </button>
+              <button
+                className={`cue-remove ${removeConfirmId === cue.id ? 'danger confirming' : 'icon-button'}`}
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation()
@@ -436,59 +472,63 @@ export function CueListPanel({
               >
                 {removeConfirmId === cue.id ? '削除?' : '✕'}
               </button>
-              {(cue.materialType === 'video' ||
-                cue.materialType === 'still' ||
-                cue.materialType === 'black') && (
-                <div className="cue-video-fades" onClick={(event) => event.stopPropagation()}>
-                  {(
-                    [
-                      ['fadeInMs', 'イン (秒)'],
-                      ['fadeOutMs', 'アウト (秒)']
-                    ] as const
-                  ).map(([field, label]) => {
-                    const disabled =
-                      cue.materialType === 'video' &&
-                      field === 'fadeOutMs' &&
-                      cue.endBehavior === 'hold'
-                    return (
-                      <label key={field}>
-                        <span>{label}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.1"
-                          value={cue[field] / 1_000}
-                          disabled={disabled}
-                          onChange={(event) =>
-                            send({
-                              type: 'setCueFades',
-                              cueId: cue.id,
-                              fadeInMs:
-                                field === 'fadeInMs'
-                                  ? Math.round(Number(event.currentTarget.value) * 1_000)
-                                  : cue.fadeInMs,
-                              fadeOutMs:
-                                field === 'fadeOutMs'
-                                  ? Math.round(Number(event.currentTarget.value) * 1_000)
-                                  : cue.fadeOutMs
-                            })
-                          }
-                        />
-                      </label>
-                    )
-                  })}
-                  {cue.materialType === 'video' && cue.endBehavior === 'hold' && (
-                    <small>保持時はアウト無効</small>
+              {isExpanded && (
+                <>
+                  {(cue.materialType === 'video' ||
+                    cue.materialType === 'still' ||
+                    cue.materialType === 'black') && (
+                    <div className="cue-video-fades" onClick={(event) => event.stopPropagation()}>
+                      {(
+                        [
+                          ['fadeInMs', 'イン (秒)'],
+                          ['fadeOutMs', 'アウト (秒)']
+                        ] as const
+                      ).map(([field, label]) => {
+                        const disabled =
+                          cue.materialType === 'video' &&
+                          field === 'fadeOutMs' &&
+                          cue.endBehavior === 'hold'
+                        return (
+                          <label key={field}>
+                            <span>{label}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.1"
+                              value={cue[field] / 1_000}
+                              disabled={disabled}
+                              onChange={(event) =>
+                                send({
+                                  type: 'setCueFades',
+                                  cueId: cue.id,
+                                  fadeInMs:
+                                    field === 'fadeInMs'
+                                      ? Math.round(Number(event.currentTarget.value) * 1_000)
+                                      : cue.fadeInMs,
+                                  fadeOutMs:
+                                    field === 'fadeOutMs'
+                                      ? Math.round(Number(event.currentTarget.value) * 1_000)
+                                      : cue.fadeOutMs
+                                })
+                              }
+                            />
+                          </label>
+                        )
+                      })}
+                      {cue.materialType === 'video' && cue.endBehavior === 'hold' && (
+                        <small>保持時はアウト無効</small>
+                      )}
+                    </div>
                   )}
-                </div>
+                  <CueBgmControl
+                    cue={cue}
+                    spotifyPlaylists={playlists}
+                    localPlaylists={localPlaylists}
+                    setCueBgm={setCueBgm}
+                  />
+                </>
               )}
-              <CueBgmControl
-                cue={cue}
-                spotifyPlaylists={playlists}
-                localPlaylists={localPlaylists}
-                setCueBgm={setCueBgm}
-              />
             </li>
           )
         })}

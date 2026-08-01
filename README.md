@@ -47,14 +47,27 @@ npm run dev
 
 ### 3. ビルド（macOS）
 
-Widevine を有効化するため **castLabs 版 Electron** と **VMP 署名**が必要です。手順の詳細は
-[`WIDEVINE.md`](./WIDEVINE.md) を参照してください（castLabs EVS の無料アカウントが必要）。
+**AI エージェント（Claude Code / Cursor 等）に任せる場合は [`BUILD.md`](./BUILD.md) を渡してください**
+（上から順に自動実行できる手順書。人手が要る箇所も明記）。
 
-```bash
-# 事前に castlabs-evs で dev バイナリを VMP 署名（WIDEVINE.md 参照）
-export CSC_IDENTITY_AUTO_DISCOVERY=false
-npm run build:mac   # afterSign で VMP 署名を自動適用 → dist/pplayer-1.0.0.dmg 等
-```
+- **Spotify BGM を使わない**（ローカル音源BGM＋映像だけ）なら Widevine 不要で、**署名なしで完全自動ビルド**できます:
+
+  ```bash
+  export CSC_IDENTITY_AUTO_DISCOVERY=false
+  export PPLAYER_SKIP_VMP=1
+  npm run build:mac        # → dist/pplayer-1.0.0.dmg 等
+  ```
+
+  （この app では Spotify BGM は数秒でスキップしますが、ローカルBGM・映像・Stream Deck 等は動作します。）
+
+- **Spotify BGM も使う**場合は Widevine 有効化のため **castLabs 版 Electron** と **VMP 署名**が必要です
+  （castLabs EVS の無料アカウントが要ります）。詳細は [`WIDEVINE.md`](./WIDEVINE.md) / [`BUILD.md`](./BUILD.md):
+
+  ```bash
+  python3 -m castlabs_evs.account -n refresh   # EVS 認証（初回は WIDEVINE.md のサインアップ）
+  export CSC_IDENTITY_AUTO_DISCOVERY=false
+  npm run build:mac        # afterSign で VMP 署名を自動適用
+  ```
 
 未署名（ad-hoc）配布のため、初回起動は右クリック→開くが必要な場合があります。
 

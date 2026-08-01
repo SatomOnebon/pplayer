@@ -51,8 +51,7 @@ export function LocalBgmSettings({
 
   const playSelected = (): void => {
     if (!selectedPlaylist) return
-    const spotifySnapshot = spotifyPlayer.getSnapshot()
-    if (spotifySnapshot.active && !spotifySnapshot.paused) spotifyPlayer.togglePlay()
+    void spotifyPlayer.transitionToBgm({ mode: 'stop', fadeMs: localBgm.fadeMs })
     localBgmPlayer.playPlaylist(selectedPlaylist)
   }
 

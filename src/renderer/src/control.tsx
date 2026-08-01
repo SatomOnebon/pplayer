@@ -31,6 +31,7 @@ import { RemoteSettings } from './control/RemoteSettings'
 import { useKeyboardShortcuts } from './control/useKeyboardShortcuts'
 import * as spotifyPlayer from './control/lib/spotifyPlayer'
 import * as localBgmPlayer from './control/lib/localBgmPlayer'
+import { getActiveBgmSource } from './control/lib/bgmSource'
 import { PlaybackCanvas } from './lib/PlaybackCanvas'
 import { resolvePlaybackFrame } from './lib/playbackFrame'
 import { useAppState } from './useAppState'
@@ -72,10 +73,16 @@ export function Control(): React.JSX.Element {
       window.api.onSpotifyControl((action) => {
         const local = localBgmPlayer.getSnapshot()
         const spotify = spotifyPlayer.getSnapshot()
-        const localPlaying = !local.paused && Boolean(local.trackName)
-        const spotifyPlaying = spotify.active && !spotify.paused && Boolean(spotify.trackName)
-        const useLocal = localPlaying || !spotifyPlaying
-        const target = useLocal ? localBgmPlayer : spotifyPlayer
+        const localSession = Boolean(local.trackName)
+        const spotifySession = spotify.active || Boolean(spotify.trackName)
+        const localPlaying = localSession && !local.paused
+        const spotifyPlaying = spotifySession && !spotify.paused
+        let source = getActiveBgmSource()
+        if (localPlaying !== spotifyPlaying) source = localPlaying ? 'local' : 'spotify'
+        else if (!source || (source === 'local' ? !localSession : !spotifySession)) {
+          source = localSession ? 'local' : spotifySession ? 'spotify' : 'local'
+        }
+        const target = source === 'spotify' ? spotifyPlayer : localBgmPlayer
         if (action === 'playPause') target.togglePlay()
         else if (action === 'next') target.nextTrack()
         else target.previousTrack()
@@ -106,7 +113,8 @@ export function Control(): React.JSX.Element {
     } else if (bgm.source === 'local') {
       const playlist = state.localBgm.playlists.find((item) => item.id === bgm.playlistId)
       void spotifyPlayer.transitionToBgm({ mode: 'stop', fadeMs: bgm.fadeMs })
-      if (playlist) void localBgmPlayer.transitionToPlaylist(playlist, bgm.fadeMs)
+      if (playlist?.tracks.length) void localBgmPlayer.transitionToPlaylist(playlist, bgm.fadeMs)
+      else void localBgmPlayer.stopWithFade(bgm.fadeMs)
     } else {
       void localBgmPlayer.stopWithFade(bgm.fadeMs)
       void spotifyPlayer.transitionToBgm(bgm)

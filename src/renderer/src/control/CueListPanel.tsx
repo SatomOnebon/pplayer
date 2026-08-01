@@ -92,6 +92,19 @@ function CueBgmControl({
             setError(null)
             if (nextMode === 'continue') setCueBgm(cue.id, { mode: 'continue' })
             else if (nextMode === 'stop') setCueBgm(cue.id, { mode: 'stop', fadeMs })
+            else if (source === 'local') {
+              const playlist = localPlaylists[0]
+              if (playlist) {
+                setCueBgm(cue.id, {
+                  mode: 'play',
+                  source: 'local',
+                  playlistId: playlist.id,
+                  fadeMs
+                })
+              } else {
+                setError('ローカルプレイリストがありません')
+              }
+            }
           }}
         >
           <option value="continue">継続</option>

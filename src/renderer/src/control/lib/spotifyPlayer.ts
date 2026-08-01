@@ -1,4 +1,5 @@
 import type { CueBgm } from '../../../../shared/types'
+import { setActiveBgmSource } from './bgmSource'
 
 export interface SpotifyPlayerSnapshot {
   ready: boolean
@@ -177,6 +178,7 @@ export async function playContext(contextUri: string, token?: number): Promise<v
     if (!response.ok) throw new Error(String(response.status))
     if (token === undefined || token === fadeToken) {
       currentContextUri = contextUri
+      setActiveBgmSource('spotify')
       update({ error: null })
     }
   } catch {
@@ -257,6 +259,7 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
         }
         if (fadeToken !== token) return
       }
+      setActiveBgmSource('spotify')
       await rampVolume(snapshot.volume, 0, token)
       return
     }

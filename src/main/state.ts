@@ -461,6 +461,15 @@ export class AppStateStore {
           this.state.localBgm.playlists = this.state.localBgm.playlists.filter(
             (item) => item.id !== command.playlistId
           )
+          this.state.cues.forEach((cue) => {
+            if (
+              cue.bgm?.mode === 'play' &&
+              cue.bgm.source === 'local' &&
+              cue.bgm.playlistId === command.playlistId
+            ) {
+              cue.bgm = { mode: 'continue' }
+            }
+          })
         }
         break
       case 'addLocalBgmTracks': {

@@ -1,5 +1,6 @@
 import { toMediaUrl } from '../../../../shared/mediaUrl'
 import type { LocalBgmPlaylist } from '../../../../shared/types'
+import { setActiveBgmSource } from './bgmSource'
 
 export interface LocalBgmSnapshot {
   playing: boolean
@@ -31,6 +32,7 @@ let outputDeviceId: string | null = null
 let crossfadeMode: 'crossfade' | 'gap' = 'crossfade'
 let fadeMs = 2000
 let automaticTransition = false
+let transitioning = false
 
 function update(changes: Partial<LocalBgmSnapshot>): void {
   const next = { ...snapshot, ...changes }
@@ -72,6 +74,22 @@ async function rampVolume(
   }
 }
 
+async function rampToTarget(deck: HTMLAudioElement, ms: number, token: number): Promise<void> {
+  if (fadeToken !== token) return
+  const from = deck.volume
+  if (ms <= 0) {
+    deck.volume = targetVolume
+    return
+  }
+  const startedAt = performance.now()
+  while (fadeToken === token) {
+    const progress = Math.min(1, (performance.now() - startedAt) / ms)
+    deck.volume = from + (targetVolume - from) * progress
+    if (progress >= 1) return
+    await wait(Math.min(50, ms))
+  }
+}
+
 async function startDeck(deck: HTMLAudioElement, index: number, token: number): Promise<boolean> {
   const track = currentPlaylist?.tracks[index]
   if (!track || fadeToken !== token) return false
@@ -86,12 +104,14 @@ async function startDeck(deck: HTMLAudioElement, index: number, token: number): 
   }
 }
 
-async function transition(index: number): Promise<void> {
+async function transition(index: number, fadeMsOverride?: number): Promise<void> {
   const playlist = currentPlaylist
   const track = playlist?.tracks[index]
   if (!playlist || !track) return
   const token = ++fadeToken
+  const fs = fadeMsOverride ?? fadeMs
   automaticTransition = true
+  transitioning = true
   currentIndex = index
   update({
     currentPlaylistId: playlist.id,
@@ -103,14 +123,15 @@ async function transition(index: number): Promise<void> {
   try {
     if (crossfadeMode === 'gap') {
       const deck = decks[activeDeck]
-      await rampVolume(deck, 0, fadeMs, token)
+      await rampVolume(deck, 0, fs, token)
       if (fadeToken !== token) return
       deck.pause()
       deck.currentTime = 0
       deck.volume = 0
       if (!(await startDeck(deck, index, token))) return
+      setActiveBgmSource('local')
       update({ playing: true, paused: false })
-      await rampVolume(deck, targetVolume, fadeMs, token)
+      await rampToTarget(deck, fs, token)
       return
     }
 
@@ -120,18 +141,19 @@ async function transition(index: number): Promise<void> {
     nextDeck.pause()
     nextDeck.volume = 0
     if (!(await startDeck(nextDeck, index, token))) return
+    setActiveBgmSource('local')
     update({ playing: true, paused: false })
-    await Promise.all([
-      rampVolume(oldDeck, 0, fadeMs, token),
-      rampVolume(nextDeck, targetVolume, fadeMs, token)
-    ])
+    await Promise.all([rampVolume(oldDeck, 0, fs, token), rampToTarget(nextDeck, fs, token)])
     if (fadeToken !== token) return
     oldDeck.pause()
     oldDeck.removeAttribute('src')
     oldDeck.load()
     activeDeck = nextDeckIndex
   } finally {
-    if (fadeToken === token) automaticTransition = false
+    if (fadeToken === token) {
+      automaticTransition = false
+      transitioning = false
+    }
   }
 }
 
@@ -151,14 +173,17 @@ decks.forEach((deck, deckIndex) => {
       crossfadeMode !== 'crossfade' ||
       deckIndex !== activeDeck ||
       automaticTransition ||
+      deck.currentTime <= 0 ||
       !Number.isFinite(deck.duration) ||
-      deck.duration - deck.currentTime > fadeMs / 1000
+      deck.duration <= 0 ||
+      deck.duration - deck.currentTime > Math.min(fadeMs / 1000, deck.duration * 0.4)
     )
       return
     const index = nextIndex()
     if (index !== null) void transition(index)
   })
   deck.addEventListener('error', () => {
+    if (!deck.hasAttribute('src') || deck.src === '' || deck.src === 'about:blank') return
     if (deckIndex === activeDeck || automaticTransition) reportError('音源を読み込めませんでした')
   })
 })
@@ -176,9 +201,10 @@ export function setOutputDevice(id: string | null): void {
   outputDeviceId = id
   decks.forEach((deck) => {
     if ('setSinkId' in deck) {
-      void deck
-        .setSinkId(outputDeviceId ?? '')
-        .catch((error: unknown) => console.warn('BGM の出力デバイスを変更できませんでした', error))
+      void deck.setSinkId(outputDeviceId ?? '').catch((error: unknown) => {
+        console.warn('BGM の出力デバイスを変更できませんでした', error)
+        reportError('BGM の出力デバイスを変更できませんでした')
+      })
     }
   })
 }
@@ -203,16 +229,12 @@ export async function transitionToPlaylist(
   playlist: LocalBgmPlaylist,
   transitionFadeMs: number
 ): Promise<void> {
-  const previousFadeMs = fadeMs
-  fadeMs = Math.min(10_000, Math.max(0, transitionFadeMs))
   if (playlist.tracks.length === 0) {
     reportError('このプレイリストに曲がありません')
-    fadeMs = previousFadeMs
     return
   }
   currentPlaylist = playlist
-  await transition(0)
-  fadeMs = previousFadeMs
+  await transition(0, Math.min(10_000, Math.max(0, transitionFadeMs)))
 }
 
 export function togglePlay(): void {
@@ -220,7 +242,10 @@ export function togglePlay(): void {
   if (playableDecks.length === 0) return
   if (snapshot.paused) {
     void Promise.all(playableDecks.map((deck) => deck.play())).then(
-      () => update({ playing: true, paused: false, error: null }),
+      () => {
+        setActiveBgmSource('local')
+        update({ playing: true, paused: false, error: null })
+      },
       () => reportError('再生を再開できませんでした')
     )
   } else {
@@ -241,15 +266,17 @@ export function previousTrack(): void {
 
 export function setVolume(volume: number): void {
   targetVolume = Math.min(1, Math.max(0, volume))
+  update({ volume: targetVolume })
+  if (transitioning) return
   fadeToken += 1
   automaticTransition = false
   decks[activeDeck].volume = targetVolume
-  update({ volume: targetVolume })
 }
 
 export function stop(): void {
   fadeToken += 1
   automaticTransition = false
+  transitioning = false
   decks.forEach((deck) => {
     deck.pause()
     deck.removeAttribute('src')

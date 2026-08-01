@@ -3,6 +3,7 @@ import { normalizeSpotifyContextUri } from '../../../shared/spotifyUri'
 import type { SpotifyPlaylist, SpotifySettingsState } from '../../../shared/types'
 import * as localBgmPlayer from './lib/localBgmPlayer'
 import * as spotifyPlayer from './lib/spotifyPlayer'
+import { setActiveBgmSource } from './lib/bgmSource'
 
 export function SpotifyBgmSettings(): React.JSX.Element {
   const [settings, setSettings] = useState<SpotifySettingsState | null>(null)
@@ -170,7 +171,7 @@ export function SpotifyBgmSettings(): React.JSX.Element {
               disabled={!snapshot.ready || !settings.lastPlaylistUri}
               onClick={() => {
                 if (settings.lastPlaylistUri) {
-                  if (localBgmPlayer.getSnapshot().playing) localBgmPlayer.stop()
+                  void localBgmPlayer.stopWithFade(2_000)
                   spotifyPlayer.activate()
                   void spotifyPlayer.playContext(settings.lastPlaylistUri)
                 }
@@ -185,7 +186,10 @@ export function SpotifyBgmSettings(): React.JSX.Element {
               type="button"
               disabled={!snapshot.ready}
               onClick={() => {
-                if (snapshot.paused && localBgmPlayer.getSnapshot().playing) localBgmPlayer.stop()
+                if (snapshot.paused) {
+                  void localBgmPlayer.stopWithFade(2_000)
+                  setActiveBgmSource('spotify')
+                }
                 spotifyPlayer.togglePlay()
               }}
             >

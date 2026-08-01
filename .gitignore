@@ -10,3 +10,7 @@ out/
 
 # Phase 0 検証用の使い捨てスパイク（ローカル参照専用）
 spike/
+
+# 内部レビュー成果物（ローカルのみ）
+REVIEW_REQUEST.md
+REVIEW_FINDINGS.md

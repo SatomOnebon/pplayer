@@ -1,7 +1,99 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { migrateBlackStillMaterials, migrateV1State, migrateVideoFades } from './migration.ts'
+import {
+  migrateBlackStillMaterials,
+  migrateV1State,
+  migrateVideoFades,
+  normalizeCueBgm,
+  normalizeLocalBgm
+} from './migration.ts'
+
+test('キュー BGM 設定をソース別に正規化する', () => {
+  assert.deepEqual(normalizeCueBgm({ mode: 'continue', ignored: true }), { mode: 'continue' })
+  assert.deepEqual(
+    normalizeCueBgm({ mode: 'play', source: 'spotify', uri: 'spotify:playlist:abc', fadeMs: 500 }),
+    { mode: 'play', source: 'spotify', uri: 'spotify:playlist:abc', fadeMs: 500 }
+  )
+  assert.deepEqual(normalizeCueBgm({ mode: 'play', uri: 'spotify:album:def', fadeMs: 20_000 }), {
+    mode: 'play',
+    source: 'spotify',
+    uri: 'spotify:album:def',
+    fadeMs: 10_000
+  })
+  assert.deepEqual(
+    normalizeCueBgm({ mode: 'play', source: 'local', playlistId: 'local-1', fadeMs: -1 }),
+    { mode: 'play', source: 'local', playlistId: 'local-1', fadeMs: 0 }
+  )
+})
+
+test('不正なキュー BGM 設定を拒否する', () => {
+  assert.equal(
+    normalizeCueBgm({ mode: 'play', source: 'spotify', uri: '', fadeMs: 500 }),
+    undefined
+  )
+  assert.equal(
+    normalizeCueBgm({ mode: 'play', source: 'local', playlistId: ' ', fadeMs: 500 }),
+    undefined
+  )
+  assert.equal(normalizeCueBgm({ mode: 'unknown', fadeMs: 500 }), undefined)
+})
+
+test('ローカル BGM 設定のプレイリストとトラックを型検証して正規化する', () => {
+  assert.deepEqual(
+    normalizeLocalBgm({
+      playlists: [
+        {
+          id: 'playlist-1',
+          name: '本番',
+          tracks: [
+            { id: 'track-1', name: '開演', filePath: '/show/opening.mp3', reloadToken: 10 },
+            { id: 'invalid', name: '不正' }
+          ]
+        },
+        { id: 2, name: '不正', tracks: [] }
+      ],
+      outputDeviceId: 'speaker-1',
+      crossfadeMode: 'gap',
+      fadeMs: 20_000
+    }),
+    {
+      playlists: [
+        {
+          id: 'playlist-1',
+          name: '本番',
+          tracks: [{ id: 'track-1', name: '開演', filePath: '/show/opening.mp3' }]
+        }
+      ],
+      outputDeviceId: 'speaker-1',
+      crossfadeMode: 'gap',
+      fadeMs: 10_000
+    }
+  )
+})
+
+test('ローカル BGM 設定の欠損値と不正値を既定値へ戻す', () => {
+  assert.deepEqual(normalizeLocalBgm(undefined), {
+    playlists: [],
+    outputDeviceId: null,
+    crossfadeMode: 'crossfade',
+    fadeMs: 2_000
+  })
+  assert.deepEqual(
+    normalizeLocalBgm({
+      playlists: 'invalid',
+      outputDeviceId: 1,
+      crossfadeMode: 'invalid',
+      fadeMs: Number.NaN
+    }),
+    {
+      playlists: [],
+      outputDeviceId: null,
+      crossfadeMode: 'crossfade',
+      fadeMs: 2_000
+    }
+  )
+})
 
 test('v1 state を既定スライドショー素材と参照キューへ完全移行する', () => {
   let sequence = 0

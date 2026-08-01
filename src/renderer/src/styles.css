@@ -743,6 +743,13 @@ button:disabled {
   font-weight: 600;
 }
 
+.remote-note {
+  margin: 6px 10px 0;
+  color: #8a93a3;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .remote-http {
   display: grid;
   padding-top: 10px;

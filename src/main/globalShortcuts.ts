@@ -4,22 +4,8 @@ import type { AppStateStore } from './state'
 import type { RemoteActions } from './remoteActions'
 import { sendSpotifyControl } from './windows'
 
-export const STREAM_DECK_SHORTCUTS = [
-  ['F13', 'GO'],
-  ['F16', '停止（蓋絵へ）'],
-  ['F17', 'ブラックアウト'],
-  ['F18', 'FTB'],
-  ['F19 / F20', '前へ / 次へ（スライドショー）'],
-  ['Control+Alt+P', '再生 / 一時停止'],
-  ['Control+Alt+1〜9 / 0', 'キュー1〜10を即時発火'],
-  ['Control+Alt+Shift+1〜9 / 0', 'キュー11〜20を即時発火'],
-  ['Control+Alt+Up / Down', 'マスター音量 +5% / −5%'],
-  ['Control+Alt+M', 'マスターミュート'],
-  ['Control+Alt+B', 'BGM 再生/一時停止'],
-  ['Control+Alt+N', 'BGM 次の曲'],
-  ['Control+Alt+V', 'BGM 前の曲']
-] as const
-
+// 表示用ラベル一覧は src/shared/shortcuts.ts の STREAM_DECK_SHORTCUTS が単一の真実源。
+// 下の register 群を追加/変更したら、shared 側のラベルと REGISTERED_SHORTCUT_COUNT も更新すること。
 export function registerGlobalShortcuts(
   stateStore: AppStateStore,
   actions: RemoteActions

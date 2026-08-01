@@ -1,19 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { RemoteSettingsState } from '../../../shared/types'
-
-const SHORTCUTS = [
-  ['F13', 'GO'],
-  ['F16', '停止（蓋絵へ）'],
-  ['F17', 'ブラックアウト'],
-  ['F18', 'FTB'],
-  ['F19 / F20', '前へ / 次へ（スライドショー）'],
-  ['Control+Alt+P', '再生 / 一時停止'],
-  ['Control+Alt+1〜9 / 0', 'キュー1〜10を即時発火'],
-  ['Control+Alt+Shift+1〜9 / 0', 'キュー11〜20を即時発火'],
-  ['Control+Alt+↑ / ↓', '音量 +5% / −5%'],
-  ['Control+Alt+M', 'ミュート切替']
-] as const
-const SHORTCUT_COUNT = 30
+import { STREAM_DECK_SHORTCUTS, REGISTERED_SHORTCUT_COUNT } from '../../../shared/shortcuts'
 
 export function RemoteSettings(): React.JSX.Element {
   const [settings, setSettings] = useState<RemoteSettingsState | null>(null)
@@ -63,7 +50,7 @@ export function RemoteSettings(): React.JSX.Element {
       </label>
       <table className="remote-shortcuts">
         <tbody>
-          {SHORTCUTS.map(([key, action]) => (
+          {STREAM_DECK_SHORTCUTS.map(([key, action]) => (
             <tr key={key}>
               <th>{key}</th>
               <td>{action}</td>
@@ -71,10 +58,13 @@ export function RemoteSettings(): React.JSX.Element {
           ))}
         </tbody>
       </table>
+      <p className="remote-note">
+        BGM 操作（B / N / V）は現在再生中のソース（ローカル / Spotify）に適用されます。
+      </p>
       {settings.failedShortcuts.length > 0 && (
         <div className="remote-error" role="alert">
           <strong>
-            {settings.failedShortcuts.length === SHORTCUT_COUNT
+            {settings.failedShortcuts.length === REGISTERED_SHORTCUT_COUNT
               ? 'すべてのショートカットが登録できませんでした'
               : '一部のショートカットが登録できませんでした'}
           </strong>

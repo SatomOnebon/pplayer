@@ -199,6 +199,22 @@ export function playPlaylist(playlist: LocalBgmPlaylist, index = 0): void {
   void transition(normalizedIndex)
 }
 
+export async function transitionToPlaylist(
+  playlist: LocalBgmPlaylist,
+  transitionFadeMs: number
+): Promise<void> {
+  const previousFadeMs = fadeMs
+  fadeMs = Math.min(10_000, Math.max(0, transitionFadeMs))
+  if (playlist.tracks.length === 0) {
+    reportError('このプレイリストに曲がありません')
+    fadeMs = previousFadeMs
+    return
+  }
+  currentPlaylist = playlist
+  await transition(0)
+  fadeMs = previousFadeMs
+}
+
 export function togglePlay(): void {
   const playableDecks = decks.filter((deck) => Boolean(deck.src))
   if (playableDecks.length === 0) return
@@ -250,4 +266,15 @@ export function stop(): void {
     trackName: null,
     error: null
   })
+}
+
+export async function stopWithFade(transitionFadeMs: number): Promise<void> {
+  const token = ++fadeToken
+  automaticTransition = true
+  const durationMs = Math.min(10_000, Math.max(0, transitionFadeMs))
+  await Promise.all(
+    decks.filter((deck) => Boolean(deck.src)).map((deck) => rampVolume(deck, 0, durationMs, token))
+  )
+  if (fadeToken !== token) return
+  stop()
 }

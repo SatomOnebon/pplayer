@@ -30,6 +30,7 @@ import { TransportPanel } from './control/TransportPanel'
 import { RemoteSettings } from './control/RemoteSettings'
 import { useKeyboardShortcuts } from './control/useKeyboardShortcuts'
 import * as spotifyPlayer from './control/lib/spotifyPlayer'
+import * as localBgmPlayer from './control/lib/localBgmPlayer'
 import { PlaybackCanvas } from './lib/PlaybackCanvas'
 import { resolvePlaybackFrame } from './lib/playbackFrame'
 import { useAppState } from './useAppState'
@@ -69,9 +70,15 @@ export function Control(): React.JSX.Element {
   useEffect(
     () =>
       window.api.onSpotifyControl((action) => {
-        if (action === 'playPause') spotifyPlayer.togglePlay()
-        else if (action === 'next') spotifyPlayer.nextTrack()
-        else spotifyPlayer.previousTrack()
+        const local = localBgmPlayer.getSnapshot()
+        const spotify = spotifyPlayer.getSnapshot()
+        const localPlaying = !local.paused && Boolean(local.trackName)
+        const spotifyPlaying = spotify.active && !spotify.paused && Boolean(spotify.trackName)
+        const useLocal = localPlaying || !spotifyPlaying
+        const target = useLocal ? localBgmPlayer : spotifyPlayer
+        if (action === 'playPause') target.togglePlay()
+        else if (action === 'next') target.nextTrack()
+        else target.previousTrack()
       }),
     []
   )
@@ -91,10 +98,20 @@ export function Control(): React.JSX.Element {
     if (id === prevCueIdRef.current) return
     prevCueIdRef.current = id
     const cue = state.cues.find((item) => item.id === id)
-    if (cue?.bgm && cue.bgm.mode !== 'continue') {
-      void spotifyPlayer.transitionToBgm(cue.bgm)
+    const bgm = cue?.bgm
+    if (!bgm || bgm.mode === 'continue') return
+    if (bgm.mode === 'stop') {
+      void spotifyPlayer.transitionToBgm(bgm)
+      void localBgmPlayer.stopWithFade(bgm.fadeMs)
+    } else if (bgm.source === 'local') {
+      const playlist = state.localBgm.playlists.find((item) => item.id === bgm.playlistId)
+      void spotifyPlayer.transitionToBgm({ mode: 'stop', fadeMs: bgm.fadeMs })
+      if (playlist) void localBgmPlayer.transitionToPlaylist(playlist, bgm.fadeMs)
+    } else {
+      void localBgmPlayer.stopWithFade(bgm.fadeMs)
+      void spotifyPlayer.transitionToBgm(bgm)
     }
-  }, [state?.activeCueId])
+  }, [state?.activeCueId, state?.localBgm.playlists])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1600px)')
@@ -310,6 +327,7 @@ export function Control(): React.JSX.Element {
         <CueListPanel
           cues={state.cues}
           materials={state.materials}
+          localPlaylists={state.localBgm.playlists}
           activeCueId={state.activeCueId}
           armedCueIndex={state.armedCueIndex}
           outputLocked={state.outputLocked}

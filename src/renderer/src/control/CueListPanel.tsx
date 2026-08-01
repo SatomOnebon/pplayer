@@ -4,6 +4,7 @@ import { normalizeSpotifyContextUri } from '../../../shared/spotifyUri'
 import type {
   Cue,
   CueBgm,
+  LocalBgmPlaylist,
   Materials,
   PlaybackCommand,
   SpotifyPlaylist,
@@ -47,16 +48,22 @@ function cueThumbnailSource(cue: Cue, materials: Materials): string | null {
 
 function CueBgmControl({
   cue,
-  playlists,
+  spotifyPlaylists,
+  localPlaylists,
   setCueBgm
 }: {
   cue: Cue
-  playlists: SpotifyPlaylist[]
+  spotifyPlaylists: SpotifyPlaylist[]
+  localPlaylists: LocalBgmPlaylist[]
   setCueBgm: (cueId: string, bgm: CueBgm) => void
 }): React.JSX.Element {
   const bgm = cue.bgm
   const [selectedMode, setSelectedMode] = useState<CueBgm['mode'] | null>(null)
-  const [uriDraft, setUriDraft] = useState(bgm?.mode === 'play' ? bgm.uri : '')
+  const initialSource = bgm?.mode === 'play' ? bgm.source : 'local'
+  const [source, setSource] = useState<'local' | 'spotify'>(initialSource)
+  const [uriDraft, setUriDraft] = useState(
+    bgm?.mode === 'play' && bgm.source === 'spotify' ? bgm.uri : ''
+  )
   const [fadeMs, setFadeMs] = useState(bgm && bgm.mode !== 'continue' ? bgm.fadeMs : 2_000)
   const [error, setError] = useState<string | null>(null)
   const mode = selectedMode ?? bgm?.mode ?? 'continue'
@@ -70,7 +77,7 @@ function CueBgmControl({
     }
     setError(null)
     setUriDraft(uri)
-    setCueBgm(cue.id, { mode: 'play', uri, fadeMs: nextFadeMs })
+    setCueBgm(cue.id, { mode: 'play', source: 'spotify', uri, fadeMs: nextFadeMs })
   }
 
   return (
@@ -94,42 +101,96 @@ function CueBgmControl({
       </label>
       {mode === 'play' && (
         <>
-          {playlists.length > 0 && (
+          <label>
+            <span>ソース</span>
+            <select
+              value={source}
+              onChange={(event) => {
+                const nextSource = event.target.value as 'local' | 'spotify'
+                setSource(nextSource)
+                setError(null)
+                if (nextSource === 'local') {
+                  const playlistId =
+                    bgm?.mode === 'play' && bgm.source === 'local'
+                      ? bgm.playlistId
+                      : localPlaylists[0]?.id
+                  if (playlistId)
+                    setCueBgm(cue.id, {
+                      mode: 'play',
+                      source: 'local',
+                      playlistId,
+                      fadeMs
+                    })
+                } else if (normalizedDraft) commitPlay(normalizedDraft)
+              }}
+            >
+              <option value="local">ローカル</option>
+              <option value="spotify">Spotify</option>
+            </select>
+          </label>
+          {source === 'local' && (
             <label>
               <span>プレイリスト</span>
               <select
-                value={
-                  normalizedDraft && playlists.some((playlist) => playlist.uri === normalizedDraft)
-                    ? normalizedDraft
-                    : ''
-                }
+                value={bgm?.mode === 'play' && bgm.source === 'local' ? bgm.playlistId : ''}
                 onChange={(event) => {
-                  if (event.target.value) commitPlay(event.target.value)
+                  if (event.target.value)
+                    setCueBgm(cue.id, {
+                      mode: 'play',
+                      source: 'local',
+                      playlistId: event.target.value,
+                      fadeMs
+                    })
                 }}
               >
                 <option value="">選択</option>
-                {playlists.map((playlist) => (
-                  <option key={playlist.uri} value={playlist.uri}>
+                {localPlaylists.map((playlist) => (
+                  <option key={playlist.id} value={playlist.id}>
                     {playlist.name}
                   </option>
                 ))}
               </select>
             </label>
           )}
-          <label className="cue-bgm-uri">
-            <span>URL/URI</span>
-            <input
-              type="text"
-              value={uriDraft}
-              onChange={(event) => {
-                setUriDraft(event.target.value)
-                setError(null)
-              }}
-            />
-          </label>
-          <button type="button" onClick={() => commitPlay(uriDraft)}>
-            セット
-          </button>
+          {source === 'spotify' && (
+            <>
+              {spotifyPlaylists.length > 0 && (
+                <label>
+                  <span>プレイリスト</span>
+                  <select
+                    value={
+                      normalizedDraft &&
+                      spotifyPlaylists.some((playlist) => playlist.uri === normalizedDraft)
+                        ? normalizedDraft
+                        : ''
+                    }
+                    onChange={(event) => event.target.value && commitPlay(event.target.value)}
+                  >
+                    <option value="">選択</option>
+                    {spotifyPlaylists.map((playlist) => (
+                      <option key={playlist.uri} value={playlist.uri}>
+                        {playlist.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label className="cue-bgm-uri">
+                <span>URL/URI</span>
+                <input
+                  type="text"
+                  value={uriDraft}
+                  onChange={(event) => {
+                    setUriDraft(event.target.value)
+                    setError(null)
+                  }}
+                />
+              </label>
+              <button type="button" onClick={() => commitPlay(uriDraft)}>
+                セット
+              </button>
+            </>
+          )}
         </>
       )}
       {mode !== 'continue' && (
@@ -145,7 +206,10 @@ function CueBgmControl({
               const nextFadeMs = Math.round(Number(event.target.value) * 1_000)
               setFadeMs(nextFadeMs)
               if (mode === 'stop') setCueBgm(cue.id, { mode: 'stop', fadeMs: nextFadeMs })
-              else if (normalizedDraft) commitPlay(normalizedDraft, nextFadeMs)
+              else if (source === 'spotify' && normalizedDraft)
+                commitPlay(normalizedDraft, nextFadeMs)
+              else if (bgm?.mode === 'play' && bgm.source === 'local')
+                setCueBgm(cue.id, { ...bgm, fadeMs: nextFadeMs })
             }}
           />
         </label>
@@ -158,6 +222,7 @@ function CueBgmControl({
 export function CueListPanel({
   cues,
   materials,
+  localPlaylists,
   activeCueId,
   armedCueIndex,
   outputLocked,
@@ -165,6 +230,7 @@ export function CueListPanel({
 }: {
   cues: Cue[]
   materials: Materials
+  localPlaylists: LocalBgmPlaylist[]
   activeCueId: string | null
   armedCueIndex: number
   outputLocked: boolean
@@ -404,7 +470,12 @@ export function CueListPanel({
                   )}
                 </div>
               )}
-              <CueBgmControl cue={cue} playlists={playlists} setCueBgm={setCueBgm} />
+              <CueBgmControl
+                cue={cue}
+                spotifyPlaylists={playlists}
+                localPlaylists={localPlaylists}
+                setCueBgm={setCueBgm}
+              />
             </li>
           )
         })}

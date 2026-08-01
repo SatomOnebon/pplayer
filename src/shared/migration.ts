@@ -22,15 +22,17 @@ export function normalizeCueBgm(value: unknown): CueBgm | undefined {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
   const bgm = value as Record<string, unknown>
   if (bgm.mode === 'continue') return { mode: 'continue' }
-  if (
-    bgm.mode === 'play' &&
-    typeof bgm.uri === 'string' &&
-    typeof bgm.fadeMs === 'number' &&
-    Number.isFinite(bgm.fadeMs)
-  ) {
+  if (bgm.mode === 'play' && typeof bgm.fadeMs === 'number' && Number.isFinite(bgm.fadeMs)) {
+    const fadeMs = Math.min(10_000, Math.max(0, bgm.fadeMs))
+    if (bgm.source === 'local') {
+      if (typeof bgm.playlistId !== 'string' || bgm.playlistId.trim() === '') return undefined
+      return { mode: 'play', source: 'local', playlistId: bgm.playlistId, fadeMs }
+    }
+    if (bgm.source !== undefined && bgm.source !== 'spotify') return undefined
+    if (typeof bgm.uri !== 'string') return undefined
     const uri = normalizeSpotifyContextUri(bgm.uri)
     if (!uri) return undefined
-    return { mode: 'play', uri, fadeMs: Math.min(10_000, Math.max(0, bgm.fadeMs)) }
+    return { mode: 'play', source: 'spotify', uri, fadeMs }
   }
   if (bgm.mode === 'stop' && typeof bgm.fadeMs === 'number' && Number.isFinite(bgm.fadeMs)) {
     return { mode: 'stop', fadeMs: Math.min(10_000, Math.max(0, bgm.fadeMs)) }

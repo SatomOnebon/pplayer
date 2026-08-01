@@ -237,6 +237,8 @@ async function rampVolume(to: number, ms: number, token: number): Promise<void> 
 
 export async function transitionToBgm(bgm: CueBgm): Promise<void> {
   if (bgm.mode === 'continue') return
+  if (bgm.mode === 'play' && bgm.source !== 'spotify') return
+  if (bgm.mode === 'stop' && (!player || !deviceId)) return
   if (!player) ensureStarted()
   if (!player || !deviceId) {
     reportError('Spotify デバイスの準備が完了していません（連携状態を確認してください）')

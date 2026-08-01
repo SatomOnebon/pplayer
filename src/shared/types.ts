@@ -114,7 +114,8 @@ export const DEFAULT_LOCAL_BGM: LocalBgmState = {
 
 export type CueBgm =
   | { mode: 'continue' }
-  | { mode: 'play'; uri: string; fadeMs: number }
+  | { mode: 'play'; source: 'spotify'; uri: string; fadeMs: number }
+  | { mode: 'play'; source: 'local'; playlistId: string; fadeMs: number }
   | { mode: 'stop'; fadeMs: number }
 
 export type Cue =

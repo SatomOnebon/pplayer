@@ -43,7 +43,7 @@ export function Control(): React.JSX.Element {
     localStorage.getItem('pplayer.viewMode') === 'setup' ? 'setup' : 'show'
   )
   const [setupSection, setSetupSection] = useState<
-    'materials' | 'bgm' | 'stage' | 'export' | 'remote'
+    'materials' | 'bgm' | 'stage' | 'audio' | 'export' | 'remote'
   >('materials')
   const [displayBounds, setDisplayBounds] = useState<DisplayBounds>({
     width: 960,
@@ -453,6 +453,14 @@ export function Control(): React.JSX.Element {
             <button
               type="button"
               role="tab"
+              aria-selected={setupSection === 'audio'}
+              onClick={() => setSetupSection('audio')}
+            >
+              音声
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={setupSection === 'export'}
               onClick={() => setSetupSection('export')}
             >
@@ -480,8 +488,10 @@ export function Control(): React.JSX.Element {
                   send={send}
                 />
                 <DisplaySleepSettings />
-                <AudioSettings deviceId={state.audioOutputDeviceId} send={send} />
               </>
+            )}
+            {setupSection === 'audio' && (
+              <AudioSettings deviceId={state.audioOutputDeviceId} send={send} />
             )}
             {setupSection === 'export' && <ExportPanel state={state} send={send} />}
             {setupSection === 'remote' && <RemoteSettings />}

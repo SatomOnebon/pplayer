@@ -135,11 +135,33 @@ button:disabled {
   background: #181c23;
   cursor: pointer;
   gap: 6px;
-  grid-template-columns: 14px 22px 64px minmax(70px, 1fr) 36px minmax(112px, 140px) 36px 40px;
+  grid-template-columns: 14px 22px 64px minmax(70px, 1fr) minmax(112px, 140px) 36px 40px;
 }
 
 .cue-row.has-details {
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto auto auto;
+}
+
+.cue-rename {
+  display: flex;
+  align-items: center;
+  padding: 2px 0 4px;
+  grid-column: 4 / 8;
+  grid-row: 2;
+}
+
+.cue-rename label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  color: #a7afbc;
+  font-size: 11px;
+}
+
+.cue-rename input {
+  flex: 1;
+  min-width: 0;
 }
 
 .cue-video-fades {
@@ -147,8 +169,8 @@ button:disabled {
   align-items: end;
   gap: 8px;
   padding: 2px 0 4px;
-  grid-column: 4 / 9;
-  grid-row: 2;
+  grid-column: 4 / 8;
+  grid-row: 3;
 }
 
 .cue-video-fades label {
@@ -172,8 +194,8 @@ button:disabled {
   align-items: end;
   gap: 8px;
   padding: 2px 0 4px;
-  grid-column: 4 / 9;
-  grid-row: 3;
+  grid-column: 4 / 8;
+  grid-row: 4;
 }
 
 .cue-bgm label {
@@ -332,7 +354,7 @@ button:disabled {
   border-radius: 6px;
   color: #dce1e9;
   background: #101319;
-  grid-column: 6;
+  grid-column: 5;
 }
 
 .fixed-behavior {
@@ -353,13 +375,13 @@ button:disabled {
 }
 
 .cue-expand {
-  grid-column: 7;
+  grid-column: 6;
 }
 
 .cue-row > .cue-remove {
   min-width: 40px;
   min-height: 36px;
-  grid-column: 8;
+  grid-column: 7;
 }
 
 .confirming {

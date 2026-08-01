@@ -407,18 +407,6 @@ export function CueListPanel({
                   )}
                 </div>
               </div>
-              <button
-                className="icon-button"
-                type="button"
-                aria-label={`${cue.label}の名前を変更`}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  const label = window.prompt('キュー名', cue.label)
-                  if (label?.trim()) send({ type: 'renameCue', cueId: cue.id, label })
-                }}
-              >
-                ✎
-              </button>
               {cue.materialType === 'still' || cue.materialType === 'black' ? (
                 <span className="fixed-behavior">固定表示</span>
               ) : (
@@ -474,6 +462,25 @@ export function CueListPanel({
               </button>
               {isExpanded && (
                 <>
+                  <div className="cue-rename" onClick={(event) => event.stopPropagation()}>
+                    <label>
+                      <span>キュー名</span>
+                      <input
+                        type="text"
+                        defaultValue={cue.label}
+                        key={cue.label}
+                        aria-label={`${cue.label}の名前`}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') event.currentTarget.blur()
+                        }}
+                        onBlur={(event) => {
+                          const label = event.currentTarget.value.trim()
+                          if (label && label !== cue.label)
+                            send({ type: 'renameCue', cueId: cue.id, label })
+                        }}
+                      />
+                    </label>
+                  </div>
                   {(cue.materialType === 'video' ||
                     cue.materialType === 'still' ||
                     cue.materialType === 'black') && (

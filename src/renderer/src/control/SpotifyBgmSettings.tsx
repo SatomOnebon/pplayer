@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { normalizeSpotifyContextUri } from '../../../shared/spotifyUri'
 import type { SpotifyPlaylist, SpotifySettingsState } from '../../../shared/types'
+import * as localBgmPlayer from './lib/localBgmPlayer'
 import * as spotifyPlayer from './lib/spotifyPlayer'
 
 export function SpotifyBgmSettings(): React.JSX.Element {
@@ -169,6 +170,7 @@ export function SpotifyBgmSettings(): React.JSX.Element {
               disabled={!snapshot.ready || !settings.lastPlaylistUri}
               onClick={() => {
                 if (settings.lastPlaylistUri) {
+                  if (localBgmPlayer.getSnapshot().playing) localBgmPlayer.stop()
                   spotifyPlayer.activate()
                   void spotifyPlayer.playContext(settings.lastPlaylistUri)
                 }
@@ -179,7 +181,14 @@ export function SpotifyBgmSettings(): React.JSX.Element {
             <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.previousTrack}>
               前へ
             </button>
-            <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.togglePlay}>
+            <button
+              type="button"
+              disabled={!snapshot.ready}
+              onClick={() => {
+                if (snapshot.paused && localBgmPlayer.getSnapshot().playing) localBgmPlayer.stop()
+                spotifyPlayer.togglePlay()
+              }}
+            >
               {snapshot.paused ? '再生' : '一時停止'}
             </button>
             <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.nextTrack}>

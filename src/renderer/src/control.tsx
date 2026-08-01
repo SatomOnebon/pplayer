@@ -17,7 +17,7 @@ import type {
   SpotifySettingsState
 } from '../../shared/types'
 import { AudioSettings } from './control/AudioSettings'
-import { SpotifyBgmSettings } from './control/SpotifyBgmSettings'
+import { BgmPanel } from './control/BgmPanel'
 import { CueListPanel } from './control/CueListPanel'
 import { ExportPanel } from './control/ExportPanel'
 import { MaskSettings } from './control/MaskSettings'
@@ -389,7 +389,7 @@ export function Control(): React.JSX.Element {
                 <DisplaySleepSettings />
                 <ExportPanel state={state} send={send} />
                 <AudioSettings deviceId={state.audioOutputDeviceId} send={send} />
-                <SpotifyBgmSettings />
+                <BgmPanel localBgm={state.localBgm} send={send} />
                 <RemoteSettings />
               </>
             )}

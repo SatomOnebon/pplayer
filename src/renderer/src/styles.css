@@ -826,6 +826,51 @@ button:disabled {
   color: #edf0f5;
 }
 
+.bgm-panel {
+  display: grid;
+}
+
+.bgm-source-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 8px 8px 0;
+  background: #171b22;
+}
+
+.bgm-source-tabs button.is-active {
+  color: #edf0f5;
+  border-color: #526986;
+  background: #26364b;
+}
+
+.local-bgm-empty {
+  margin: 0;
+  padding: 0 10px;
+  color: #929aa8;
+  font-size: 11px;
+}
+
+.local-bgm-crossfade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px;
+  padding: 0 10px;
+  gap: 8px;
+}
+
+.local-bgm-crossfade label {
+  display: grid;
+  gap: 4px;
+  color: #929aa8;
+  font-size: 11px;
+}
+
+.local-bgm-crossfade select,
+.local-bgm-crossfade input {
+  min-width: 0;
+  width: 100%;
+}
+
 .global-message {
   padding: 7px 12px;
   border-radius: 6px;

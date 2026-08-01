@@ -1,22 +1,20 @@
 # pplayer
 
-円形スクリーンへ写真・動画を投影する、ライブイベント用の演出プレイヤー（macOS）。
-素材ライブラリ＋キューリストで本番を進行し、**Spotify と連携して BGM** も流せます。
-
-> This product uses the Spotify API/SDK but is **not endorsed, certified, or otherwise
-> approved by Spotify**. Spotify is a trademark of Spotify AB.
+ライブイベント用の**映像ポン出し（キュー出し）アプリ**（macOS）。
+写真・動画を素材として仕込み、GO で**円形スクリーンへ瞬時に投影**します。
+おまけで **Spotify 連携の BGM 再生**にも対応。
 
 ## 主な機能
 
-- **円形マスク投影**: 操作ウィンドウ（MacBook）＋表示ウィンドウ（プロジェクター）。円形/カスタム画像マスク、位置・サイズ調整。
-- **素材＋キュー構成**: スライドショー／動画／静止画を素材として管理し、キューへ登録。GO で進行、蓋絵（スタンバイ）、ブラックアウト、FTB。
-- **MP4 書き出し**: スライドショーを H.264 で書き出し。
-- **Spotify BGM**: Web Playback SDK でアプリ内再生。独立トランスポート＋キュー連動（GO で BGM 自動切替・フェード）。
+- **ポン出し（キュー出し）**: 写真・動画・静止画を素材として仕込み、キューへ登録。**GO で瞬時に投影**。蓋絵（スタンバイ）、ブラックアウト、FTB、任意キューへの即ジャンプ。
+- **円形マスク投影**: 操作ウィンドウ（MacBook）＋表示ウィンドウ（プロジェクター）。円形／カスタム画像マスク、位置・サイズ調整。
 - **本番運用支援**:
-  - **出力ロック**: ロック中はライブ出力を変える操作（GO/次前/キュー発火/ブラックアウト等）を全経路で無効化。素材の仕込みは可能。
+  - **出力ロック**: ロック中はライブ出力を変える操作（GO／次前／キュー発火／ブラックアウト等）を全経路で無効化。素材の仕込みは可能。
   - **素材リロード**: 同名ファイルを差し替えたら「↻ リロード」で再起動なしに反映。
   - **素材プレビュー**: 本番に出さず素材を確認（無音）。動画は外部プレーヤーで音つき確認。
-  - **Stream Deck 連携**: グローバルショートカット＋ローカル HTTP API（GO・キュー・Spotify 再生/停止/前後）。
+  - **Stream Deck 連携**: グローバルショートカット＋ローカル HTTP API で GO・キュー発火などを外部コントロール。
+- **MP4 書き出し**: スライドショーを H.264 で書き出し。
+- **（おまけ）Spotify BGM**: Spotify と連携して BGM をアプリ内再生（Web Playback SDK）。独立トランスポート＋キュー連動（GO で自動切替・フェード）。要 Premium・自分の Client ID（下記）。
 
 ## 動作環境
 
@@ -27,6 +25,9 @@
 ## セットアップ
 
 ### 1. Spotify を使う準備（BGM 機能を使う場合のみ）
+
+> This product uses the Spotify API/SDK but is **not endorsed, certified, or otherwise
+> approved by Spotify**. Spotify is a trademark of Spotify AB.
 
 1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) で自分のアプリを作成。
 2. **Redirect URI** に `http://127.0.0.1:8723/callback` を追加。

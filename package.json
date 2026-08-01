@@ -1,7 +1,7 @@
 {
   "name": "pplayer",
   "version": "1.0.0",
-  "description": "円形マスク付きライブ演出プレイヤー（Spotify BGM 連携）",
+  "description": "ライブイベント用の映像ポン出し（キュー出し）アプリ（円形スクリーン投影・おまけで Spotify BGM）",
   "main": "./out/main/index.js",
   "author": "onelab",
   "homepage": "https://electron-vite.org",

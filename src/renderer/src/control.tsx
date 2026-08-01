@@ -39,10 +39,12 @@ import './styles.css'
 
 export function Control(): React.JSX.Element {
   const state = useAppState()
-  const [isThreeColumn, setIsThreeColumn] = useState(
-    () => window.matchMedia('(min-width: 1600px)').matches
+  const [viewMode, setViewMode] = useState<'show' | 'setup'>(() =>
+    localStorage.getItem('pplayer.viewMode') === 'setup' ? 'setup' : 'show'
   )
-  const [rightView, setRightView] = useState<'output' | 'materials'>('output')
+  const [setupSection, setSetupSection] = useState<
+    'materials' | 'bgm' | 'stage' | 'export' | 'remote'
+  >('materials')
   const [displayBounds, setDisplayBounds] = useState<DisplayBounds>({
     width: 960,
     height: 540,
@@ -59,6 +61,10 @@ export function Control(): React.JSX.Element {
   const messageTimer = useRef<number | null>(null)
   const prevCueIdRef = useRef<string | null | undefined>(undefined)
   const send = useCallback((command: PlaybackCommand): void => window.api.sendCommand(command), [])
+  const changeViewMode = useCallback((next: 'show' | 'setup'): void => {
+    setViewMode(next)
+    localStorage.setItem('pplayer.viewMode', next)
+  }, [])
   const activeCue = state?.cues.find((cue) => cue.id === state.activeCueId)
   useKeyboardShortcuts(activeCue?.materialType, send, () => setPreviewPhotoId(null))
 
@@ -121,12 +127,6 @@ export function Control(): React.JSX.Element {
     }
   }, [state?.activeCueId, state?.localBgm.playlists])
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 1600px)')
-    const update = (event: MediaQueryListEvent): void => setIsThreeColumn(event.matches)
-    mediaQuery.addEventListener('change', update)
-    return () => mediaQuery.removeEventListener('change', update)
-  }, [])
   useEffect(() => {
     const update = (bounds: DisplayBounds): void => {
       if (bounds.width > 0 && bounds.height > 0) setDisplayBounds(bounds)
@@ -249,8 +249,9 @@ export function Control(): React.JSX.Element {
             onPreview={(type, id) => setPreviewTarget({ type, id })}
             onEdit={(id) => {
               send({ type: 'setEditingSlideshow', materialId: id })
+              changeViewMode('setup')
+              setSetupSection('materials')
               setCenterView('editor')
-              setRightView('materials')
             }}
           />
         </section>
@@ -291,59 +292,85 @@ export function Control(): React.JSX.Element {
   return (
     <main className="control-app">
       <header className="app-header">
-        <div>
+        <div className="app-brand">
           <h1>pplayer</h1>
           <p>ライブ演出コントロール</p>
         </div>
-        {inlineMessage && (
-          <span className="global-message" role="status">
-            {inlineMessage}
-          </span>
-        )}
-        <div className="header-actions">
-          <button type="button" onClick={() => void saveProject()}>
-            保存
-          </button>
-          <button type="button" onClick={() => void loadProject()}>
-            読み込み
-          </button>
-          <button
-            type="button"
-            className={`output-lock-button${state.outputLocked ? ' is-locked' : ''}`}
-            aria-pressed={state.outputLocked}
-            onClick={() => send({ type: 'setOutputLock', locked: !state.outputLocked })}
-          >
-            {state.outputLocked ? '🔒 ロック中（解除）' : '🔓 出力ロック'}
-          </button>
-          <span className={`status-badge status-${state.status}`}>
-            {state.status === 'playing'
-              ? '再生中'
-              : state.status === 'paused'
-                ? '一時停止'
-                : state.status === 'blackout'
-                  ? 'ブラックアウト'
-                  : '待機'}
-          </span>
-          {state.outputLocked && (
-            <span className="output-lock-badge" role="status">
-              🔒 出力ロック中
+        <div className="header-center">
+          <div className="modeswitch" role="tablist" aria-label="画面モード">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === 'show'}
+              onClick={() => changeViewMode('show')}
+            >
+              本番
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === 'setup'}
+              onClick={() => changeViewMode('setup')}
+            >
+              準備
+            </button>
+          </div>
+          {inlineMessage && (
+            <span className="global-message" role="status">
+              {inlineMessage}
             </span>
           )}
         </div>
+        <div className="header-actions">
+          {viewMode === 'show' ? (
+            <>
+              <span className={`status-badge status-${state.status}`}>
+                {state.status === 'playing'
+                  ? '再生中'
+                  : state.status === 'paused'
+                    ? '一時停止'
+                    : state.status === 'blackout'
+                      ? 'ブラックアウト'
+                      : '待機'}
+              </span>
+              <button
+                type="button"
+                className={`output-lock-button${state.outputLocked ? ' is-locked' : ''}`}
+                aria-pressed={state.outputLocked}
+                onClick={() => send({ type: 'setOutputLock', locked: !state.outputLocked })}
+              >
+                {state.outputLocked ? '🔒 ロック中（解除）' : '🔓 出力ロック'}
+              </button>
+              {state.outputLocked && (
+                <span className="output-lock-badge" role="status">
+                  🔒 出力ロック中
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => void saveProject()}>
+                保存
+              </button>
+              <button type="button" onClick={() => void loadProject()}>
+                読み込み
+              </button>
+            </>
+          )}
+        </div>
       </header>
-      <div className="workspace three-column-workspace">
-        <CueListPanel
-          cues={state.cues}
-          materials={state.materials}
-          localPlaylists={state.localBgm.playlists}
-          activeCueId={state.activeCueId}
-          armedCueIndex={state.armedCueIndex}
-          outputLocked={state.outputLocked}
-          send={send}
-        />
-        <div className="right-workspace">
-          {isThreeColumn && materialContent}
-          <div className="output-column">
+      {viewMode === 'show' ? (
+        <div className="show-layout">
+          <CueListPanel
+            cues={state.cues}
+            materials={state.materials}
+            localPlaylists={state.localBgm.playlists}
+            activeCueId={state.activeCueId}
+            armedCueIndex={state.armedCueIndex}
+            outputLocked={state.outputLocked}
+            send={send}
+          />
+          <div className="show-center">
             <section className="panel preview-panel">
               <div className="panel-heading compact">
                 <div>
@@ -380,30 +407,59 @@ export function Control(): React.JSX.Element {
               outputLocked={state.outputLocked}
               send={send}
             />
-            {!isThreeColumn && (
-              <div className="right-view-tabs" role="tablist" aria-label="右カラム表示">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={rightView === 'output'}
-                  className={rightView === 'output' ? 'is-active' : undefined}
-                  onClick={() => setRightView('output')}
-                >
-                  出力・設定
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={rightView === 'materials'}
-                  className={rightView === 'materials' ? 'is-active' : undefined}
-                  onClick={() => setRightView('materials')}
-                >
-                  素材ライブラリ
-                </button>
-              </div>
-            )}
-            {!isThreeColumn && rightView === 'materials' && materialContent}
-            {(isThreeColumn || rightView === 'output') && (
+          </div>
+          <aside className="show-bgm" aria-label="BGM 操作">
+            <BgmPanel localBgm={state.localBgm} send={send} />
+          </aside>
+        </div>
+      ) : (
+        <div className="setup-layout">
+          <nav className="setnav" role="tablist" aria-label="準備メニュー">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={setupSection === 'materials'}
+              onClick={() => setSetupSection('materials')}
+            >
+              素材ライブラリ
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={setupSection === 'bgm'}
+              onClick={() => setSetupSection('bgm')}
+            >
+              BGM
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={setupSection === 'stage'}
+              onClick={() => setSetupSection('stage')}
+            >
+              ステージ出力
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={setupSection === 'export'}
+              onClick={() => setSetupSection('export')}
+            >
+              書き出し
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={setupSection === 'remote'}
+              onClick={() => setSetupSection('remote')}
+            >
+              リモート
+            </button>
+          </nav>
+          <section className="setbody">
+            {setupSection === 'materials' && materialContent}
+            {setupSection === 'bgm' && <BgmPanel localBgm={state.localBgm} send={send} />}
+            {setupSection === 'stage' && (
               <>
                 <MaskSettings
                   fit={editing?.fit ?? 'contain'}
@@ -413,15 +469,14 @@ export function Control(): React.JSX.Element {
                   send={send}
                 />
                 <DisplaySleepSettings />
-                <ExportPanel state={state} send={send} />
                 <AudioSettings deviceId={state.audioOutputDeviceId} send={send} />
-                <BgmPanel localBgm={state.localBgm} send={send} />
-                <RemoteSettings />
               </>
             )}
-          </div>
+            {setupSection === 'export' && <ExportPanel state={state} send={send} />}
+            {setupSection === 'remote' && <RemoteSettings />}
+          </section>
         </div>
-      </div>
+      )}
       {resolvedPreviewTarget && (
         <MaterialPreviewModal
           target={resolvedPreviewTarget}

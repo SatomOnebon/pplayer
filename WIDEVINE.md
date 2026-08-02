@@ -1,3 +1,5 @@
+[日本語](WIDEVINE.md) | [English](WIDEVINE.en.md)
+
 # Widevine / castLabs Electron セットアップ（必読）
 
 pplayer は Spotify **Web Playback SDK** で BGM を再生する。Web Playback SDK は

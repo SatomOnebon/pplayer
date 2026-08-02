@@ -1,3 +1,5 @@
+[日本語](NOTICE.md) | [English](NOTICE.en.md)
+
 # NOTICE / サードパーティおよび商標について
 
 本ソフトウェア（pplayer）は MIT ライセンスで配布されます（`LICENSE` 参照）。

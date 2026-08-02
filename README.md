@@ -1,3 +1,5 @@
+[日本語](README.md) | [English](README.en.md)
+
 # pplayer
 
 ライブイベント用の**映像ポン出し（キュー出し）アプリ**（macOS）。

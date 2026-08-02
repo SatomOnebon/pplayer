@@ -1,3 +1,5 @@
+[日本語](README.md) | [English](README.en.md)
+
 # Stream Deck アイコン（Spotify BGM 制御）
 
 144×144 PNG。Stream Deck アプリのボタンにドラッグして設定してください。

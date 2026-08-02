@@ -1,3 +1,5 @@
+[日本語](BUILD.md) | [English](BUILD.en.md)
+
 # BUILD.md — AI エージェント向け自動ビルド手順
 
 このファイルは、リポジトリを clone した人が **AI コーディングエージェント（Claude Code /

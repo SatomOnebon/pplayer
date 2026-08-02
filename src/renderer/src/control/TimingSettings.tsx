@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { FADE_EASINGS } from '../../../shared/easing'
 import type { FadeEasing, PlaybackCommand, TimingConfig } from '../../../shared/types'
 import { seconds } from './utils'
+import { useT } from '../i18n/LocaleProvider'
 
 type TimingMsField = 'fadeInMs' | 'holdMs' | 'fadeOutMs'
 
-const EASING_LABELS: Record<FadeEasing, string> = {
-  linear: 'リニア',
-  easeIn: 'イーズイン',
-  easeOut: 'イーズアウト',
-  easeInOut: 'イーズインアウト'
+const EASING_KEYS: Record<FadeEasing, string> = {
+  linear: 'timing.easing.linear',
+  easeIn: 'timing.easing.easeIn',
+  easeOut: 'timing.easing.easeOut',
+  easeInOut: 'timing.easing.easeInOut'
 }
 
 export function TimingSettings({
@@ -21,6 +22,7 @@ export function TimingSettings({
   cycleMs: number
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
+  const t = useT()
   const [timingDraft, setTimingDraft] = useState<Record<TimingMsField, string | null>>({
     fadeInMs: null,
     holdMs: null,
@@ -47,20 +49,20 @@ export function TimingSettings({
     <section className="panel settings-panel" aria-labelledby="timing-heading">
       <div className="panel-heading compact">
         <div className="timing-heading-copy">
-          <h2 id="timing-heading">タイミング</h2>
-          <span>入力後 Enter またはフォーカス移動で確定</span>
+          <h2 id="timing-heading">{t('timing.heading')}</h2>
+          <span>{t('timing.commitHint')}</span>
         </div>
       </div>
       <div className="timing-fields">
         {(
           [
-            ['fadeInMs', 'フェードイン', 0],
-            ['holdMs', '表示', 0.1],
-            ['fadeOutMs', 'フェードアウト', 0]
+            ['fadeInMs', 'timing.fadeIn', 0],
+            ['holdMs', 'timing.hold', 0.1],
+            ['fadeOutMs', 'timing.fadeOut', 0]
           ] as const
-        ).map(([field, label, minimum]) => (
+        ).map(([field, labelKey, minimum]) => (
           <label key={field}>
-            <span>{label}</span>
+            <span>{t(labelKey)}</span>
             <span className="input-with-unit">
               <input
                 type="number"
@@ -75,40 +77,40 @@ export function TimingSettings({
                   if (event.key === 'Enter') event.currentTarget.blur()
                 }}
               />
-              <span>秒</span>
+              <span>{t('common.secondsUnit')}</span>
             </span>
           </label>
         ))}
         <label className="timing-ease-field">
-          <span>フェードインの曲線</span>
+          <span>{t('timing.fadeInCurve')}</span>
           <select
             value={timing.fadeInEase}
             onChange={(event) => setEasing('fadeInEase', event.target.value as FadeEasing)}
           >
             {FADE_EASINGS.map((ease) => (
               <option key={ease} value={ease}>
-                {EASING_LABELS[ease]}
+                {t(EASING_KEYS[ease])}
               </option>
             ))}
           </select>
         </label>
         <label className="timing-ease-field">
-          <span>フェードアウトの曲線</span>
+          <span>{t('timing.fadeOutCurve')}</span>
           <select
             value={timing.fadeOutEase}
             onChange={(event) => setEasing('fadeOutEase', event.target.value as FadeEasing)}
           >
             {FADE_EASINGS.map((ease) => (
               <option key={ease} value={ease}>
-                {EASING_LABELS[ease]}
+                {t(EASING_KEYS[ease])}
               </option>
             ))}
           </select>
         </label>
       </div>
       <div className="setting-summary">
-        <span>1枚あたり</span>
-        <strong>{seconds(cycleMs)}秒</strong>
+        <span>{t('timing.perPhoto')}</span>
+        <strong>{t('time.seconds', { s: seconds(cycleMs) })}</strong>
       </div>
     </section>
   )

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toMediaUrl } from '../../../shared/mediaUrl'
 import type { PreviewTarget } from '../../../shared/types'
+import { useT } from '../i18n/LocaleProvider'
 
 export function MaterialPreviewModal({
   target,
@@ -9,6 +10,7 @@ export function MaterialPreviewModal({
   target: PreviewTarget
   onClose: () => void
 }): React.JSX.Element {
+  const t = useT()
   const [photoIndex, setPhotoIndex] = useState(0)
   const [playing, setPlaying] = useState(true)
   const photos = useMemo(
@@ -60,13 +62,13 @@ export function MaterialPreviewModal({
       >
         <header className="material-preview-modal-header">
           <div>
-            <span>素材プレビュー（本番出力には表示されません）</span>
+            <span>{t('preview.modalDescription')}</span>
             <h2 id="material-preview-title">{target.material.name}</h2>
           </div>
           <button
             type="button"
             className="material-preview-close"
-            aria-label="閉じる"
+            aria-label={t('common.close')}
             onClick={onClose}
           >
             ✕
@@ -96,7 +98,7 @@ export function MaterialPreviewModal({
                 alt={photos[photoIndex].fileName}
               />
             ) : (
-              <p className="material-preview-empty">写真がありません</p>
+              <p className="material-preview-empty">{t('photo.empty')}</p>
             ))}
         </div>
 
@@ -106,26 +108,24 @@ export function MaterialPreviewModal({
               type="button"
               onClick={() => void window.api.openExternalPlayer(target.material.filePath)}
             >
-              🔊 音つきで開く（外部プレーヤー）
+              {t('preview.openWithSound')}
             </button>
-            <span>
-              アプリ内プレビューは無音です（会場への漏れ防止）。音は外部プレーヤーで確認できます。
-            </span>
+            <span>{t('preview.mutedHint')}</span>
           </div>
         )}
         {target.type === 'slideshow' && photos.length > 0 && (
           <div className="material-preview-modal-controls">
             <button type="button" onClick={() => setPlaying((value) => !value)}>
-              {playing ? '⏸ 一時停止' : '▶ 再生'}
+              {playing ? t('common.pauseWithIcon') : t('common.playWithIcon')}
             </button>
             <button type="button" onClick={previousPhoto}>
-              ← 前へ
+              {t('common.previousWithArrow')}
             </button>
             <button type="button" onClick={nextPhoto}>
-              次へ →
+              {t('common.nextWithArrow')}
             </button>
             <span>
-              {photoIndex + 1} / 全{photos.length}枚
+              {t('preview.photoProgress', { current: photoIndex + 1, total: photos.length })}
             </span>
           </div>
         )}

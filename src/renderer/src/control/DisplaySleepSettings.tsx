@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { PowerSettingsState } from '../../../shared/types'
+import { useT } from '../i18n/LocaleProvider'
 
 export function DisplaySleepSettings(): React.JSX.Element {
+  const t = useT()
   const [settings, setSettings] = useState<PowerSettingsState | null>(null)
 
   useEffect(() => {
@@ -10,7 +12,7 @@ export function DisplaySleepSettings(): React.JSX.Element {
     return unsubscribe
   }, [])
 
-  if (!settings) return <section className="panel">設定を読み込んでいます…</section>
+  if (!settings) return <section className="panel">{t('common.loadingSettings')}</section>
 
   const statusClass = settings.preventDisplaySleep
     ? settings.active
@@ -19,16 +21,16 @@ export function DisplaySleepSettings(): React.JSX.Element {
     : ''
   const statusText = settings.preventDisplaySleep
     ? settings.active
-      ? '● 抑制中（画面は消灯しません）'
-      : '▲ 抑制を要求中（まだ確立していません）'
-    : '○ 通常（スリープ有効）'
+      ? t('sleep.status.active')
+      : t('sleep.status.pending')
+    : t('sleep.status.normal')
 
   return (
     <section className="panel">
       <div className="panel-heading compact">
         <div>
-          <h2>ディスプレイ / スリープ</h2>
-          <span>本番中の画面消灯・スクリーンセーバーを抑制</span>
+          <h2>{t('sleep.heading')}</h2>
+          <span>{t('sleep.description')}</span>
         </div>
       </div>
       <label className="remote-toggle">
@@ -41,7 +43,7 @@ export function DisplaySleepSettings(): React.JSX.Element {
               .then(setSettings)
           }
         />
-        スクリーンセーバー / ディスプレイスリープを抑制
+        {t('sleep.prevent')}
       </label>
       <p className={`power-status ${statusClass}`}>{statusText}</p>
     </section>

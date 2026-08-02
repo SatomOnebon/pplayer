@@ -3,7 +3,8 @@ import { buildCycles } from '../../../shared/timeline'
 import type { ExportConfig, ExportProgress, PlaybackCommand } from '../../../shared/types'
 import type { EditingAppState } from '../../../shared/migration'
 import { buildMaskCanvas, drawFrame } from '../lib/compositor'
-import { imageCache } from '../lib/imageCache'
+import { ImageLoadError, imageCache } from '../lib/imageCache'
+import { useT } from '../i18n/LocaleProvider'
 
 type ResolutionPreset = '1080p' | '2160p' | 'custom'
 
@@ -14,6 +15,7 @@ export function ExportPanel({
   state: EditingAppState
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
+  const t = useT()
   const [slideshowId, setSlideshowId] = useState(state.editingSlideshowId ?? '')
   const [resolution, setResolution] = useState<ResolutionPreset>('1080p')
   const [customWidth, setCustomWidth] = useState('1920')
@@ -78,7 +80,7 @@ export function ExportPanel({
       const maskCanvas = buildMaskCanvas(mask, maskImage, dimensions.width, dimensions.height)
       const canvas = new OffscreenCanvas(dimensions.width, dimensions.height)
       const context = canvas.getContext('2d')
-      if (!context) throw new Error('書き出し用 Canvas を作成できません')
+      if (!context) throw new Error(t('export.canvasError'))
       for (let index = 0; index < photos.length; index += 1) {
         if (exportCancelledRef.current) return
         const photoPath = photos[index].filePath
@@ -110,7 +112,12 @@ export function ExportPanel({
           current: 0,
           total: photos.length,
           percent: 0,
-          message: error instanceof Error ? error.message : String(error)
+          message:
+            error instanceof ImageLoadError
+              ? t('image.loadFailed', { status: error.status })
+              : error instanceof Error
+                ? error.message
+                : String(error)
         })
         setExporting(false)
       }
@@ -128,13 +135,13 @@ export function ExportPanel({
     <section className="panel export-panel" aria-labelledby="export-heading">
       <div className="panel-heading compact">
         <div>
-          <h2 id="export-heading">MP4 書き出し</h2>
-          <span>高画質プリレンダー</span>
+          <h2 id="export-heading">{t('export.heading')}</h2>
+          <span>{t('export.description')}</span>
         </div>
       </div>
       <div className="export-controls">
         <label>
-          <span>対象スライドショー</span>
+          <span>{t('export.targetSlideshow')}</span>
           <select
             value={effectiveSlideshowId}
             disabled={exporting}
@@ -148,18 +155,18 @@ export function ExportPanel({
           </select>
         </label>
         <label>
-          <span>形式</span>
+          <span>{t('export.format')}</span>
           <select
             value={exportCodec}
             disabled={exporting}
             onChange={(event) => setExportCodec(event.target.value as ExportConfig['codec'])}
           >
-            <option value="hevc10">HEVC 10bit(推奨・グラデーション高画質)</option>
-            <option value="h264">H.264(互換性重視)</option>
+            <option value="hevc10">{t('export.codec.hevc')}</option>
+            <option value="h264">{t('export.codec.h264')}</option>
           </select>
         </label>
         <label>
-          <span>解像度</span>
+          <span>{t('export.resolution')}</span>
           <select
             value={resolution}
             disabled={exporting}
@@ -167,13 +174,13 @@ export function ExportPanel({
           >
             <option value="1080p">1920 × 1080</option>
             <option value="2160p">3840 × 2160</option>
-            <option value="custom">カスタム</option>
+            <option value="custom">{t('export.custom')}</option>
           </select>
         </label>
         {resolution === 'custom' && (
           <div className="custom-resolution">
             <label>
-              <span>幅</span>
+              <span>{t('export.width')}</span>
               <input
                 type="number"
                 min="2"
@@ -184,7 +191,7 @@ export function ExportPanel({
             </label>
             <span>×</span>
             <label>
-              <span>高さ</span>
+              <span>{t('export.height')}</span>
               <input
                 type="number"
                 min="2"
@@ -218,10 +225,10 @@ export function ExportPanel({
             })
           }
         >
-          書き出し先を選択
+          {t('export.chooseDestination')}
         </button>
         <span className="export-path" title={exportPath}>
-          {exportPath || '未選択'}
+          {exportPath || t('common.notSelected')}
         </span>
         <button
           className="primary-button"
@@ -229,32 +236,32 @@ export function ExportPanel({
           disabled={exporting || playablePhotoCount === 0 || !exportPath}
           onClick={() => void startExport()}
         >
-          書き出し開始
+          {t('export.start')}
         </button>
         {exporting && (
           <button type="button" className="danger" onClick={() => void cancelExport()}>
-            キャンセル
+            {t('common.cancel')}
           </button>
         )}
       </div>
-      <p className="export-codec-note">
-        HEVC は Mac / QuickTime でそのまま再生可。古い機器で再生する場合のみ H.264
-        を選んでください。
-      </p>
+      <p className="export-codec-note">{t('export.codecNote')}</p>
       {exportProgress && (
         <div className="export-progress">
           <progress max="100" value={exportProgress.percent} />
           <div>
             <span>
               {exportProgress.stage === 'composing'
-                ? `画像を合成中 ${exportProgress.current} / ${exportProgress.total}`
+                ? t('export.progress.composing', {
+                    current: exportProgress.current,
+                    total: exportProgress.total
+                  })
                 : exportProgress.stage === 'encoding'
-                  ? '動画をエンコード中'
+                  ? t('export.progress.encoding')
                   : exportProgress.stage === 'done'
-                    ? '書き出し完了'
+                    ? t('export.progress.done')
                     : exportProgress.stage === 'cancelled'
-                      ? 'キャンセルしました'
-                      : 'エラー'}
+                      ? t('export.progress.cancelled')
+                      : t('export.progress.error')}
             </span>
             <strong>{Math.round(exportProgress.percent)}%</strong>
           </div>
@@ -264,7 +271,7 @@ export function ExportPanel({
               type="button"
               onClick={() => void window.api.revealExport(exportProgress.outputPath!)}
             >
-              Finder で表示
+              {t('export.revealFinder')}
             </button>
           )}
         </div>

@@ -4,17 +4,19 @@ import type { SpotifyPlaylist, SpotifySettingsState } from '../../../shared/type
 import * as localBgmPlayer from './lib/localBgmPlayer'
 import * as spotifyPlayer from './lib/spotifyPlayer'
 import { setActiveBgmSource } from './lib/bgmSource'
+import { useT } from '../i18n/LocaleProvider'
 
 export function SpotifyBgmSettings({
   variant
 }: {
   variant: 'strip' | 'settings'
 }): React.JSX.Element {
+  const t = useT()
   const [settings, setSettings] = useState<SpotifySettingsState | null>(null)
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([])
-  const [playlistError, setPlaylistError] = useState<string | null>(null)
+  const [playlistErrorKey, setPlaylistErrorKey] = useState<string | null>(null)
   const [directContext, setDirectContext] = useState('')
-  const [directContextError, setDirectContextError] = useState<string | null>(null)
+  const [directContextErrorKey, setDirectContextErrorKey] = useState<string | null>(null)
   const [clientId, setClientId] = useState('')
   const snapshot = useSyncExternalStore(spotifyPlayer.subscribe, spotifyPlayer.getSnapshot)
 
@@ -34,22 +36,20 @@ export function SpotifyBgmSettings({
   }, [settings?.clientId])
 
   const loadPlaylists = (): void => {
-    setPlaylistError(null)
+    setPlaylistErrorKey(null)
     void window.api
       .getSpotifyPlaylists()
       .then(setPlaylists)
-      .catch(() => setPlaylistError('プレイリストを取得できませんでした'))
+      .catch(() => setPlaylistErrorKey('spotify.error.playlistsLoad'))
   }
 
   const setDirectContextUri = (): void => {
     const uri = normalizeSpotifyContextUri(directContext)
     if (!uri) {
-      setDirectContextError(
-        'Spotify のプレイリスト、アルバム、またはアーティストのURL/URIを入力してください'
-      )
+      setDirectContextErrorKey('spotify.invalidContext')
       return
     }
-    setDirectContextError(null)
+    setDirectContextErrorKey(null)
     void window.api.setSpotifySettings({ lastPlaylistUri: uri }).then(setSettings)
   }
 
@@ -70,7 +70,8 @@ export function SpotifyBgmSettings({
     if (settings?.connected) loadPlaylists()
   }, [settings?.connected])
 
-  if (!settings) return <section className="panel remote-panel">設定を読み込んでいます…</section>
+  if (!settings)
+    return <section className="panel remote-panel">{t('common.loadingSettings')}</section>
 
   const hasDirectSelection =
     settings.lastPlaylistUri !== null &&
@@ -81,12 +82,12 @@ export function SpotifyBgmSettings({
       <div className="panel-heading compact">
         <div>
           <h2>Spotify BGM</h2>
-          <span>映像とは独立したBGMトランスポート</span>
+          <span>{t('spotify.description')}</span>
         </div>
       </div>
       {!settings.connected ? (
         variant === 'strip' ? (
-          <p className="spotify-client-note">準備モードで Spotify と連携してください</p>
+          <p className="spotify-client-note">{t('spotify.connectInSetup')}</p>
         ) : (
           <>
             <label className="remote-field">
@@ -99,34 +100,31 @@ export function SpotifyBgmSettings({
                 disabled={settings.authorizing}
               />
             </label>
-            <p className="spotify-client-note">
-              Spotify Developer Dashboard で自分のアプリを登録し、Redirect URI に
-              http://127.0.0.1:8723/callback を追加して Client ID を入力してください
-            </p>
+            <p className="spotify-client-note">{t('spotify.clientIdHelp')}</p>
             <div className="spotify-actions">
               <button
                 type="button"
                 disabled={settings.authorizing || !clientId.trim()}
-                title={!clientId.trim() ? '先に Client ID を入力' : undefined}
+                title={!clientId.trim() ? t('spotify.enterClientIdFirst') : undefined}
                 onClick={() => void authorize()}
               >
-                Spotify と連携
+                {t('spotify.connect')}
               </button>
             </div>
             {settings.authorizing && (
-              <p className="power-status is-pending">▲ 連携中…（ブラウザで許可してください）</p>
+              <p className="power-status is-pending">{t('spotify.authorizing')}</p>
             )}
           </>
         )
       ) : (
         <>
           <p className={`power-status ${snapshot.ready ? 'is-active' : 'is-pending'}`}>
-            {snapshot.ready ? '● BGM 準備完了' : '▲ デバイス準備中…'}
+            {snapshot.ready ? t('spotify.ready') : t('spotify.devicePending')}
           </p>
           {variant === 'strip' ? (
             <>
               <label className="audio-device-field">
-                <span>プレイリスト</span>
+                <span>{t('bgm.playlist')}</span>
                 <select
                   value={settings.lastPlaylistUri ?? ''}
                   onChange={(event) =>
@@ -135,10 +133,10 @@ export function SpotifyBgmSettings({
                       .then(setSettings)
                   }
                 >
-                  <option value="">選択してください</option>
+                  <option value="">{t('common.selectPlease')}</option>
                   {hasDirectSelection && (
                     <option value={settings.lastPlaylistUri ?? ''}>
-                      （直接指定）{settings.lastPlaylistUri}
+                      {t('spotify.directSelection', { uri: settings.lastPlaylistUri ?? '' })}
                     </option>
                   )}
                   {playlists.map((playlist) => (
@@ -160,14 +158,14 @@ export function SpotifyBgmSettings({
                     }
                   }}
                 >
-                  ▶ 再生
+                  {t('common.playWithIcon')}
                 </button>
                 <button
                   type="button"
                   disabled={!snapshot.ready}
                   onClick={spotifyPlayer.previousTrack}
                 >
-                  前へ
+                  {t('common.previous')}
                 </button>
                 <button
                   type="button"
@@ -180,19 +178,19 @@ export function SpotifyBgmSettings({
                     spotifyPlayer.togglePlay()
                   }}
                 >
-                  {snapshot.paused ? '再生' : '一時停止'}
+                  {snapshot.paused ? t('common.play') : t('common.pause')}
                 </button>
                 <button type="button" disabled={!snapshot.ready} onClick={spotifyPlayer.nextTrack}>
-                  次へ
+                  {t('common.next')}
                 </button>
               </div>
               <div className="spotify-now-playing">
-                <span>現在の曲</span>
+                <span>{t('bgm.currentTrack')}</span>
                 <strong>{snapshot.trackName ?? '—'}</strong>
                 <small>{snapshot.artistName ?? '—'}</small>
               </div>
               <label className="spotify-volume">
-                <span>BGM 音量 {Math.round(snapshot.volume * 100)}%</span>
+                <span>{t('bgm.volume', { percent: Math.round(snapshot.volume * 100) })}</span>
                 <input
                   type="range"
                   min={0}
@@ -206,44 +204,46 @@ export function SpotifyBgmSettings({
             <>
               <div className="remote-token-row">
                 <label className="remote-field">
-                  <span>またはURL/URIを直接指定</span>
+                  <span>{t('spotify.directUrl')}</span>
                   <input
                     type="text"
                     value={directContext}
-                    placeholder="https://open.spotify.com/playlist/... または spotify:playlist:..."
+                    placeholder={t('spotify.urlPlaceholder')}
                     onChange={(event) => {
                       setDirectContext(event.target.value)
-                      setDirectContextError(null)
+                      setDirectContextErrorKey(null)
                     }}
                   />
                 </label>
                 <button type="button" onClick={setDirectContextUri}>
-                  セット
+                  {t('common.set')}
                 </button>
               </div>
-              {directContextError && (
+              {directContextErrorKey && (
                 <p className="remote-error" role="alert">
-                  {directContextError}
+                  {t(directContextErrorKey)}
                 </p>
               )}
               <div className="spotify-actions">
                 <button type="button" onClick={loadPlaylists}>
-                  再読み込み
+                  {t('common.reloadPlain')}
                 </button>
                 <button
                   type="button"
                   onClick={() => void window.api.deauthorizeSpotify().then(setSettings)}
                 >
-                  連携解除
+                  {t('spotify.disconnect')}
                 </button>
               </div>
             </>
           )}
         </>
       )}
-      {(settings.error || playlistError || snapshot.error) && (
+      {(settings.error || playlistErrorKey || snapshot.errorKey) && (
         <p className="remote-error" role="alert">
-          {settings.error ?? playlistError ?? snapshot.error}
+          {settings.error ??
+            (playlistErrorKey ? t(playlistErrorKey) : null) ??
+            (snapshot.errorKey ? t(snapshot.errorKey, snapshot.errorParams) : null)}
         </p>
       )}
     </section>

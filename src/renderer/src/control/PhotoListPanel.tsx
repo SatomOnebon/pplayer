@@ -12,6 +12,7 @@ import { toThumbUrl } from '../../../shared/mediaUrl'
 import type { FitMode, PhotoItem, PlaybackCommand, TimingConfig } from '../../../shared/types'
 import { MaterialPreview } from './MaterialPreview'
 import { seconds } from './utils'
+import { useT } from '../i18n/LocaleProvider'
 
 interface PhotoTiming {
   fadeInMs: number | null
@@ -37,6 +38,7 @@ function PhotoTimingInputs({
   defaultTiming: TimingConfig
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
+  const t = useT()
   const timing: PhotoTiming = photo
   const [draft, setDraft] = useState<Record<keyof PhotoTiming, string>>({
     fadeInMs: timing.fadeInMs === null ? '' : seconds(timing.fadeInMs),
@@ -70,20 +72,20 @@ function PhotoTimingInputs({
     >
       {(
         [
-          ['fadeInMs', 'イン', 0],
-          ['holdMs', '表示', 0.1],
-          ['fadeOutMs', 'アウト', 0]
+          ['fadeInMs', 'photo.fadeIn', 0],
+          ['holdMs', 'photo.hold', 0.1],
+          ['fadeOutMs', 'photo.fadeOut', 0]
         ] as const
-      ).map(([field, label, minimum]) => (
+      ).map(([field, labelKey, minimum]) => (
         <label key={field}>
-          <span>{label}</span>
+          <span>{t(labelKey)}</span>
           <input
             type="number"
             min={minimum}
             step="0.1"
             value={draft[field]}
             placeholder={seconds(defaultTiming[field])}
-            aria-label={`${label}(秒)`}
+            aria-label={t('photo.timingSeconds', { label: t(labelKey) })}
             onChange={(event) =>
               setDraft((current) => ({ ...current, [field]: event.target.value }))
             }
@@ -96,10 +98,10 @@ function PhotoTimingInputs({
         </label>
       ))}
       <label>
-        <span>配置</span>
+        <span>{t('material.fit')}</span>
         <select
           value={photo.fit ?? ''}
-          aria-label="写真ごとの配置"
+          aria-label={t('photo.fitPerPhoto')}
           onChange={(event) =>
             send({
               type: 'setPhotoFit',
@@ -109,9 +111,9 @@ function PhotoTimingInputs({
           }
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <option value="">既定</option>
-          <option value="contain">全体表示 (contain)</option>
-          <option value="cover">埋める (cover)</option>
+          <option value="">{t('common.default')}</option>
+          <option value="contain">{t('mask.fitContainDetailed')}</option>
+          <option value="cover">{t('material.fitCoverDetailed')}</option>
         </select>
       </label>
     </div>
@@ -140,6 +142,7 @@ interface PhotoRowProps {
 }
 
 const PhotoRow = memo(function PhotoRow(props: PhotoRowProps): React.JSX.Element {
+  const t = useT()
   const { photo } = props
   const targetClass = props.isDragTarget ? (props.dropAfter ? 'drop-after' : 'drop-before') : ''
   return (
@@ -161,7 +164,7 @@ const PhotoRow = memo(function PhotoRow(props: PhotoRowProps): React.JSX.Element
       onDoubleClick={() => {
         if (!photo.excluded) props.send({ type: 'jump', index: props.playableIndex })
       }}
-      title="クリック: プレビュー / ダブルクリック: ここから再生"
+      title={t('photo.rowHint')}
       aria-current={props.isCurrent ? 'true' : undefined}
     >
       <span className="drag-handle" aria-hidden="true">
@@ -171,7 +174,7 @@ const PhotoRow = memo(function PhotoRow(props: PhotoRowProps): React.JSX.Element
         className="photo-select-checkbox"
         type="checkbox"
         checked={props.isSelected}
-        aria-label={`${photo.fileName}を選択`}
+        aria-label={t('photo.selectPhoto', { name: photo.fileName })}
         onClick={(event) => {
           event.stopPropagation()
           props.onSelectionClick(event, photo.id)
@@ -209,7 +212,7 @@ const PhotoRow = memo(function PhotoRow(props: PhotoRowProps): React.JSX.Element
               })
             }
           />
-          除外
+          {t('photo.exclude')}
         </label>
         <button
           className={`remove-photo-button ${props.isRemoveConfirming ? 'confirming' : ''}`}
@@ -217,15 +220,15 @@ const PhotoRow = memo(function PhotoRow(props: PhotoRowProps): React.JSX.Element
           data-remove-photo-id={photo.id}
           aria-label={
             props.isRemoveConfirming
-              ? `${photo.fileName}を削除する`
-              : `${photo.fileName}の削除を確認する`
+              ? t('photo.deletePhoto', { name: photo.fileName })
+              : t('photo.confirmPhotoDelete', { name: photo.fileName })
           }
           onClick={(event) => {
             event.stopPropagation()
             props.onRemoveClick(photo.id)
           }}
         >
-          {props.isRemoveConfirming ? '削除?' : '✕'}
+          {props.isRemoveConfirming ? t('common.confirmDelete') : '✕'}
         </button>
       </div>
     </li>
@@ -251,6 +254,7 @@ export function PhotoListPanel({
   showPhotoAddResult: (count: number | undefined) => void
   inlineMessage: string | null
 }): React.JSX.Element {
+  const t = useT()
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ id: string; after: boolean } | null>(null)
   const [isFileDragActive, setIsFileDragActive] = useState(false)
@@ -394,9 +398,10 @@ export function PhotoListPanel({
     >
       <div className="panel-heading">
         <div className="photo-heading-copy">
-          <h2 id="photo-heading">写真</h2>
+          <h2 id="photo-heading">{t('photo.heading')}</h2>
           <span>
-            全{photos.length}枚{excludedCount > 0 ? `（除外${excludedCount}枚）` : ''}
+            {t('photo.total', { count: photos.length })}
+            {excludedCount > 0 ? t('photo.excludedCount', { count: excludedCount }) : ''}
           </span>
           <label className="select-all-control">
             <input
@@ -405,16 +410,20 @@ export function PhotoListPanel({
               }}
               type="checkbox"
               checked={allSelected}
-              aria-label="写真を全選択"
+              aria-label={t('photo.selectAllAria')}
               onChange={() => {
                 setSelectedIds(allSelected ? new Set() : new Set(photos.map((photo) => photo.id)))
                 selectionAnchorIdRef.current = null
                 setIsBulkRemoveConfirming(false)
               }}
             />
-            全選択
+            {t('photo.selectAll')}
           </label>
-          {selectedCount > 0 && <span className="selected-count">{selectedCount}枚選択中</span>}
+          {selectedCount > 0 && (
+            <span className="selected-count">
+              {t('photo.selectedCount', { count: selectedCount })}
+            </span>
+          )}
           {selectedCount > 0 && (
             <button
               className={`bulk-remove-button ${isBulkRemoveConfirming ? 'confirming' : ''}`}
@@ -428,7 +437,9 @@ export function PhotoListPanel({
                 selectionAnchorIdRef.current = null
               }}
             >
-              {isBulkRemoveConfirming ? `${selectedCount}枚を削除?` : '選択を削除'}
+              {isBulkRemoveConfirming
+                ? t('photo.confirmBulkDelete', { count: selectedCount })
+                : t('photo.deleteSelection')}
             </button>
           )}
         </div>
@@ -438,13 +449,13 @@ export function PhotoListPanel({
             type="button"
             onClick={() => void window.api.choosePhotos().then(showPhotoAddResult)}
           >
-            ＋ 写真を追加
+            {t('photo.add')}
           </button>
           <button
             type="button"
             onClick={() => void window.api.choosePhotosFolder().then(showPhotoAddResult)}
           >
-            フォルダから追加
+            {t('photo.addFolder')}
           </button>
         </div>
       </div>
@@ -455,8 +466,8 @@ export function PhotoListPanel({
       )}
       {photos.length === 0 ? (
         <div className="empty-state">
-          <strong>写真がありません</strong>
-          <span>「写真を追加」から JPG / PNG を選択してください</span>
+          <strong>{t('photo.empty')}</strong>
+          <span>{t('photo.emptyHint')}</span>
         </div>
       ) : (
         <ol

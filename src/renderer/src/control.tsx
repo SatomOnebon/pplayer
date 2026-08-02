@@ -73,6 +73,10 @@ export function Control(): React.JSX.Element {
   useKeyboardShortcuts(activeCue?.materialType, send, () => setPreviewPhotoId(null))
 
   useEffect(() => {
+    document.title = t('app.controlTitle')
+  }, [t])
+
+  useEffect(() => {
     const unsubscribe = window.api.onSpotifySettingsChanged(setSpotifySettings)
     void window.api.getSpotifySettings().then(setSpotifySettings)
     return unsubscribe
@@ -184,21 +188,19 @@ export function Control(): React.JSX.Element {
   }, [])
   const saveProject = useCallback(async (): Promise<void> => {
     const result = await window.api.saveProject()
-    if (result) showMessage('error' in result ? result.error : 'プロジェクトを保存しました')
-  }, [showMessage])
+    if (result) showMessage('error' in result ? result.error : t('project.saved'))
+  }, [showMessage, t])
   const loadProject = useCallback(async (): Promise<void> => {
     const result = await window.api.loadProject()
     if (!result) return
-    showMessage(
-      'error' in result ? result.error : `プロジェクトを読み込みました（写真 ${result.loaded}枚）`
-    )
-  }, [showMessage])
+    showMessage('error' in result ? result.error : t('project.loaded', { count: result.loaded }))
+  }, [showMessage, t])
   const frame = useMemo(() => (state ? resolvePlaybackFrame(state, now) : null), [now, state])
 
   if (!state || !frame) {
     return (
       <main className="control-app loading">
-        <p>状態を読み込んでいます…</p>
+        <p>{t('common.loadingState')}</p>
       </main>
     )
   }
@@ -256,8 +258,8 @@ export function Control(): React.JSX.Element {
         <section className="panel material-panel">
           <div className="panel-heading">
             <div>
-              <h2>素材ライブラリ</h2>
-              <span>素材を管理してキューへ登録</span>
+              <h2>{t('material.libraryHeading')}</h2>
+              <span>{t('material.libraryDescription')}</span>
             </div>
           </div>
           <MaterialLibrary
@@ -278,10 +280,10 @@ export function Control(): React.JSX.Element {
         <div className="slideshow-editor">
           <div className="editor-toolbar">
             <button type="button" onClick={() => setCenterView('materials')}>
-              ‹ 素材に戻る
+              {t('material.backToLibrary')}
             </button>
             <div>
-              <span>編集中</span>
+              <span>{t('material.editing')}</span>
               <strong>{editing.name}</strong>
             </div>
           </div>
@@ -294,7 +296,7 @@ export function Control(): React.JSX.Element {
             send={send}
             showPhotoAddResult={(count) => {
               if (count !== undefined)
-                showMessage(count ? `${count}枚追加しました` : '追加できる画像がありませんでした')
+                showMessage(count ? t('photo.added', { count }) : t('photo.noImagesToAdd'))
             }}
             inlineMessage={inlineMessage}
           />
@@ -395,7 +397,7 @@ export function Control(): React.JSX.Element {
             <section className="panel preview-panel">
               <div className="panel-heading compact">
                 <div>
-                  <h2>ミラープレビュー</h2>
+                  <h2>{t('preview.mirror')}</h2>
                   <span>
                     {displayBounds.width}×{displayBounds.height}
                   </span>
@@ -404,7 +406,9 @@ export function Control(): React.JSX.Element {
                   type="button"
                   onClick={() => window.api.setDisplayFullScreen(!displayBounds.isFullScreen)}
                 >
-                  {displayBounds.isFullScreen ? '解除' : '⛶ 全画面'}
+                  {displayBounds.isFullScreen
+                    ? t('preview.exitFullscreen')
+                    : t('preview.fullscreen')}
                 </button>
               </div>
               <div
@@ -415,8 +419,10 @@ export function Control(): React.JSX.Element {
                   } as CSSProperties
                 }
               >
-                <PlaybackCanvas state={state} muted aria-label="本番画面のミラープレビュー" />
-                {state.status === 'blackout' && <span className="preview-label">BLACKOUT</span>}
+                <PlaybackCanvas state={state} muted aria-label={t('a11y.mirrorPreview')} />
+                {state.status === 'blackout' && (
+                  <span className="preview-label">{t('status.blackoutUpper')}</span>
+                )}
               </div>
             </section>
             <TransportPanel
@@ -429,7 +435,7 @@ export function Control(): React.JSX.Element {
               send={send}
             />
           </div>
-          <aside className="show-bgm" aria-label="BGM 操作">
+          <aside className="show-bgm" aria-label={t('a11y.bgmControls')}>
             <BgmPanel localBgm={state.localBgm} send={send} variant="strip" />
           </aside>
         </div>

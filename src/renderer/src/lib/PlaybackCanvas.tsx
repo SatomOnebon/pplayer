@@ -107,7 +107,7 @@ export function PlaybackCanvas({
 
     if (!muted && 'setSinkId' in video) {
       void video.setSinkId(audioOutputDeviceId ?? '').catch((error: unknown) => {
-        console.warn('音声出力デバイスを設定できなかったため既定デバイスを使用します', error)
+        console.warn('Could not set the audio output device; using the default device', error)
       })
     }
 
@@ -139,7 +139,7 @@ export function PlaybackCanvas({
           }, 1000)
         })
         .catch((error: unknown) => {
-          console.warn('動画を再生できませんでした', error)
+          console.warn('Could not play the video', error)
         })
     } else {
       video.pause()

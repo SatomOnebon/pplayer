@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { RemoteSettingsState } from '../../../shared/types'
 import { STREAM_DECK_SHORTCUTS, REGISTERED_SHORTCUT_COUNT } from '../../../shared/shortcuts'
+import { useT } from '../i18n/LocaleProvider'
 
 export function RemoteSettings(): React.JSX.Element {
+  const t = useT()
   const [settings, setSettings] = useState<RemoteSettingsState | null>(null)
   const [portInput, setPortInput] = useState('8722')
 
@@ -16,7 +18,8 @@ export function RemoteSettings(): React.JSX.Element {
     return unsubscribe
   }, [])
 
-  if (!settings) return <section className="panel remote-panel">設定を読み込んでいます…</section>
+  if (!settings)
+    return <section className="panel remote-panel">{t('common.loadingSettings')}</section>
 
   const example = `http://127.0.0.1:${settings.port}/api/go?token=${settings.token}`
   const savePort = (): void => {
@@ -32,7 +35,7 @@ export function RemoteSettings(): React.JSX.Element {
     <section className="panel remote-panel">
       <div className="panel-heading compact">
         <div>
-          <h2>リモート制御</h2>
+          <h2>{t('remote.heading')}</h2>
           <span>Stream Deck / Companion</span>
         </div>
       </div>
@@ -46,31 +49,28 @@ export function RemoteSettings(): React.JSX.Element {
               .then(setSettings)
           }
         />
-        グローバルショートカット（Stream Deck 用）
+        {t('remote.globalShortcuts')}
       </label>
       <table className="remote-shortcuts">
         <tbody>
-          {STREAM_DECK_SHORTCUTS.map(([key, action]) => (
+          {STREAM_DECK_SHORTCUTS.map(([key, actionKey]) => (
             <tr key={key}>
               <th>{key}</th>
-              <td>{action}</td>
+              <td>{t(actionKey)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="remote-note">
-        BGM 操作（B / N / V）は現在再生中のソース（ローカル / Spotify）に適用されます。
-      </p>
+      <p className="remote-note">{t('remote.bgmShortcutNote')}</p>
       {settings.failedShortcuts.length > 0 && (
         <div className="remote-error" role="alert">
           <strong>
             {settings.failedShortcuts.length === REGISTERED_SHORTCUT_COUNT
-              ? 'すべてのショートカットが登録できませんでした'
-              : '一部のショートカットが登録できませんでした'}
+              ? t('remote.shortcutsFailedAll')
+              : t('remote.shortcutsFailedSome')}
           </strong>
           <span>
-            以下のショートカットは他のアプリと競合していて使えません:{' '}
-            {settings.failedShortcuts.join(', ')}
+            {t('remote.shortcutsConflict', { shortcuts: settings.failedShortcuts.join(', ') })}
           </span>
         </div>
       )}
@@ -85,10 +85,10 @@ export function RemoteSettings(): React.JSX.Element {
                 .then(setSettings)
             }
           />
-          ローカル HTTP API
+          {t('remote.httpApi')}
         </label>
         <label className="remote-field">
-          <span>ポート</span>
+          <span>{t('remote.port')}</span>
           <input
             type="number"
             min={1}
@@ -103,18 +103,18 @@ export function RemoteSettings(): React.JSX.Element {
         </label>
         <div className="remote-token-row">
           <label className="remote-field">
-            <span>トークン</span>
+            <span>{t('remote.token')}</span>
             <input type="text" readOnly value={settings.token} onFocus={(e) => e.target.select()} />
           </label>
           <button
             type="button"
             onClick={() => void window.api.regenerateRemoteToken().then(setSettings)}
           >
-            再生成
+            {t('remote.regenerate')}
           </button>
         </div>
         <label className="remote-field remote-example">
-          <span>使用例</span>
+          <span>{t('remote.example')}</span>
           <input type="text" readOnly value={example} onFocus={(e) => e.target.select()} />
         </label>
         {settings.listenError && (

@@ -11,23 +11,32 @@ import type {
   SpotifySettingsState
 } from '../../../shared/types'
 import { Thumb } from './Thumb'
+import { useT, type Translate } from '../i18n/LocaleProvider'
 
-const TYPE_LABEL = { slideshow: 'SS', video: '動画', still: '静止画', black: '黒' } as const
-const BEHAVIOR_LABEL = {
-  loop: 'ループ（手動で次へ）',
-  advance: '終了後に次のキューへ',
-  toStandby: '終了後に蓋絵へ',
-  hold: '最後の絵で静止',
-  toBlack: '終了後にブラックアウト'
+const TYPE_LABEL_KEYS = {
+  slideshow: 'material.slideshowShort',
+  video: 'material.video',
+  still: 'material.still',
+  black: 'material.black'
+} as const
+const BEHAVIOR_LABEL_KEYS = {
+  loop: 'cue.behavior.loop',
+  advance: 'cue.behavior.advance',
+  toStandby: 'cue.behavior.toStandby',
+  hold: 'cue.behavior.hold',
+  toBlack: 'cue.behavior.toBlack'
 } as const
 
-function materialOptions(materials: Materials): Array<{
+function materialOptions(
+  materials: Materials,
+  blackName: string
+): Array<{
   type: Cue['materialType']
   id: string
   name: string
 }> {
   return [
-    { type: 'black' as const, id: '', name: '黒画面' },
+    { type: 'black' as const, id: '', name: blackName },
     ...materials.slideshows.map((item) => ({ type: 'slideshow' as const, ...item })),
     ...materials.videos.map((item) => ({ type: 'video' as const, ...item })),
     ...materials.stills.map((item) => ({ type: 'still' as const, ...item }))
@@ -46,13 +55,13 @@ function cueThumbnailSource(cue: Cue, materials: Materials): string | null {
   return material ? toThumbUrl(material.filePath, 128, material.reloadToken) : null
 }
 
-function cueBgmSummary(cue: Cue, localPlaylists: LocalBgmPlaylist[]): string {
+function cueBgmSummary(cue: Cue, localPlaylists: LocalBgmPlaylist[], t: Translate): string {
   const bgm = cue.bgm
-  if (!bgm || bgm.mode === 'continue') return '継続'
-  if (bgm.mode === 'stop') return 'BGM 停止'
-  if (bgm.source === 'spotify') return '♪ Spotify'
+  if (!bgm || bgm.mode === 'continue') return t('cue.bgm.continue')
+  if (bgm.mode === 'stop') return t('cue.bgm.stopSummary')
+  if (bgm.source === 'spotify') return t('cue.bgm.spotifySummary')
   const playlist = localPlaylists.find((item) => item.id === bgm.playlistId)
-  return `♪ ${playlist?.name ?? 'ローカル'}`
+  return t('cue.bgm.localSummary', { name: playlist?.name ?? t('bgm.local') })
 }
 
 function CueBgmControl({
@@ -66,6 +75,7 @@ function CueBgmControl({
   localPlaylists: LocalBgmPlaylist[]
   setCueBgm: (cueId: string, bgm: CueBgm) => void
 }): React.JSX.Element {
+  const t = useT()
   const bgm = cue.bgm
   const [selectedMode, setSelectedMode] = useState<CueBgm['mode'] | null>(null)
   const initialSource = bgm?.mode === 'play' ? bgm.source : 'local'
@@ -74,17 +84,17 @@ function CueBgmControl({
     bgm?.mode === 'play' && bgm.source === 'spotify' ? bgm.uri : ''
   )
   const [fadeMs, setFadeMs] = useState(bgm && bgm.mode !== 'continue' ? bgm.fadeMs : 2_000)
-  const [error, setError] = useState<string | null>(null)
+  const [errorKey, setErrorKey] = useState<string | null>(null)
   const mode = selectedMode ?? bgm?.mode ?? 'continue'
   const normalizedDraft = normalizeSpotifyContextUri(uriDraft)
 
   const commitPlay = (value: string, nextFadeMs = fadeMs): void => {
     const uri = normalizeSpotifyContextUri(value)
     if (!uri) {
-      setError('URL/URIが不正です')
+      setErrorKey('cue.bgm.invalidUri')
       return
     }
-    setError(null)
+    setErrorKey(null)
     setUriDraft(uri)
     setCueBgm(cue.id, { mode: 'play', source: 'spotify', uri, fadeMs: nextFadeMs })
   }
@@ -98,7 +108,7 @@ function CueBgmControl({
           onChange={(event) => {
             const nextMode = event.target.value as CueBgm['mode']
             setSelectedMode(nextMode)
-            setError(null)
+            setErrorKey(null)
             if (nextMode === 'continue') setCueBgm(cue.id, { mode: 'continue' })
             else if (nextMode === 'stop') setCueBgm(cue.id, { mode: 'stop', fadeMs })
             else if (source === 'local') {
@@ -111,26 +121,26 @@ function CueBgmControl({
                   fadeMs
                 })
               } else {
-                setError('ローカルプレイリストがありません')
+                setErrorKey('cue.bgm.noLocalPlaylist')
               }
             }
           }}
         >
-          <option value="continue">継続</option>
-          <option value="play">再生</option>
-          <option value="stop">停止</option>
+          <option value="continue">{t('cue.bgm.continue')}</option>
+          <option value="play">{t('common.play')}</option>
+          <option value="stop">{t('common.stop')}</option>
         </select>
       </label>
       {mode === 'play' && (
         <>
           <label>
-            <span>ソース</span>
+            <span>{t('bgm.source')}</span>
             <select
               value={source}
               onChange={(event) => {
                 const nextSource = event.target.value as 'local' | 'spotify'
                 setSource(nextSource)
-                setError(null)
+                setErrorKey(null)
                 if (nextSource === 'local') {
                   const playlistId =
                     bgm?.mode === 'play' && bgm.source === 'local'
@@ -146,13 +156,13 @@ function CueBgmControl({
                 } else if (normalizedDraft) commitPlay(normalizedDraft)
               }}
             >
-              <option value="local">ローカル</option>
+              <option value="local">{t('bgm.local')}</option>
               <option value="spotify">Spotify</option>
             </select>
           </label>
           {source === 'local' && (
             <label>
-              <span>プレイリスト</span>
+              <span>{t('bgm.playlist')}</span>
               <select
                 value={bgm?.mode === 'play' && bgm.source === 'local' ? bgm.playlistId : ''}
                 onChange={(event) => {
@@ -165,7 +175,7 @@ function CueBgmControl({
                     })
                 }}
               >
-                <option value="">選択</option>
+                <option value="">{t('common.select')}</option>
                 {localPlaylists.map((playlist) => (
                   <option key={playlist.id} value={playlist.id}>
                     {playlist.name}
@@ -178,7 +188,7 @@ function CueBgmControl({
             <>
               {spotifyPlaylists.length > 0 && (
                 <label>
-                  <span>プレイリスト</span>
+                  <span>{t('bgm.playlist')}</span>
                   <select
                     value={
                       normalizedDraft &&
@@ -188,7 +198,7 @@ function CueBgmControl({
                     }
                     onChange={(event) => event.target.value && commitPlay(event.target.value)}
                   >
-                    <option value="">選択</option>
+                    <option value="">{t('common.select')}</option>
                     {spotifyPlaylists.map((playlist) => (
                       <option key={playlist.uri} value={playlist.uri}>
                         {playlist.name}
@@ -204,12 +214,12 @@ function CueBgmControl({
                   value={uriDraft}
                   onChange={(event) => {
                     setUriDraft(event.target.value)
-                    setError(null)
+                    setErrorKey(null)
                   }}
                 />
               </label>
               <button type="button" onClick={() => commitPlay(uriDraft)}>
-                セット
+                {t('common.set')}
               </button>
             </>
           )}
@@ -217,7 +227,7 @@ function CueBgmControl({
       )}
       {mode !== 'continue' && (
         <label>
-          <span>フェード (秒)</span>
+          <span>{t('cue.bgm.fadeSeconds')}</span>
           <input
             type="number"
             min="0"
@@ -236,7 +246,7 @@ function CueBgmControl({
           />
         </label>
       )}
-      {error && <small className="remote-error">{error}</small>}
+      {errorKey && <small className="remote-error">{t(errorKey)}</small>}
     </div>
   )
 }
@@ -258,7 +268,11 @@ export function CueListPanel({
   outputLocked: boolean
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
-  const options = useMemo(() => materialOptions(materials), [materials])
+  const t = useT()
+  const options = useMemo(
+    () => materialOptions(materials, t('material.blackScreen')),
+    [materials, t]
+  )
   const [selectedMaterial, setSelectedMaterial] = useState('black:')
   const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null)
   const [expandedCues, setExpandedCues] = useState<Set<string>>(new Set())
@@ -354,7 +368,9 @@ export function CueListPanel({
         >
           <strong>GO</strong>
           <span>
-            {armedCue ? `▸ ${armedCueIndex + 1}. ${armedCue.label}` : 'キューがありません'}
+            {armedCue
+              ? t('cue.armed', { index: armedCueIndex + 1, name: armedCue.label })
+              : t('cue.none')}
           </span>
         </button>
         <button
@@ -362,13 +378,13 @@ export function CueListPanel({
           disabled={outputLocked}
           onClick={() => send({ type: 'stopToStandby' })}
         >
-          ■ 停止（蓋絵へ）
+          {t('cue.stopToStandby')}
         </button>
       </div>
       <div className="panel-heading compact">
         <div>
-          <h2 id="cue-heading">キューリスト</h2>
-          <span>クリック: 次に設定 / ダブルクリック: 即時発火</span>
+          <h2 id="cue-heading">{t('cue.heading')}</h2>
+          <span>{t('cue.instructions')}</span>
         </div>
       </div>
       <ol className="cue-rows">
@@ -381,7 +397,7 @@ export function CueListPanel({
               key={cue.id}
               className={`cue-row${isExpanded ? ' has-details' : ''}${isActive ? ' is-active' : ''}${isArmed ? ' is-armed' : ''}`}
               draggable
-              title="シングルクリック: 次に GO するキュー / ダブルクリック: すぐ発火"
+              title={t('cue.rowHint')}
               onClick={() => send({ type: 'armCue', id: cue.id })}
               onDoubleClick={() => {
                 if (!outputLocked) send({ type: 'fireCue', id: cue.id })
@@ -399,28 +415,28 @@ export function CueListPanel({
               <div className="cue-thumb">
                 <Thumb
                   src={cueThumbnailSource(cue, materials)}
-                  fallbackLabel={cue.materialType === 'video' ? '動画' : undefined}
+                  fallbackLabel={cue.materialType === 'video' ? t('material.video') : undefined}
                 />
               </div>
               <div className="cue-copy">
                 <strong>{cue.label}</strong>
                 <div className="cue-markers">
                   <span className={`material-badge type-${cue.materialType}`}>
-                    {TYPE_LABEL[cue.materialType]}
+                    {t(TYPE_LABEL_KEYS[cue.materialType])}
                   </span>
-                  {isActive && <span className="running-marker">再生中</span>}
-                  {isArmed && <span className="armed-marker">次</span>}
+                  {isActive && <span className="running-marker">{t('status.playing')}</span>}
+                  {isArmed && <span className="armed-marker">{t('cue.nextMarker')}</span>}
                   {!isExpanded && (
-                    <span className="cue-bgm-summary">{cueBgmSummary(cue, localPlaylists)}</span>
+                    <span className="cue-bgm-summary">{cueBgmSummary(cue, localPlaylists, t)}</span>
                   )}
                 </div>
               </div>
               {cue.materialType === 'still' || cue.materialType === 'black' ? (
-                <span className="fixed-behavior">固定表示</span>
+                <span className="fixed-behavior">{t('cue.fixedDisplay')}</span>
               ) : (
                 <select
                   value={cue.endBehavior}
-                  aria-label={`${cue.label}の終了動作`}
+                  aria-label={t('cue.endBehaviorAria', { name: cue.label })}
                   onClick={(event) => event.stopPropagation()}
                   onChange={(event) =>
                     send({
@@ -435,7 +451,7 @@ export function CueListPanel({
                     : (['advance', 'toStandby', 'hold', 'toBlack'] as const)
                   ).map((behavior) => (
                     <option key={behavior} value={behavior}>
-                      {BEHAVIOR_LABEL[behavior]}
+                      {t(BEHAVIOR_LABEL_KEYS[behavior])}
                     </option>
                   ))}
                 </select>
@@ -444,8 +460,10 @@ export function CueListPanel({
                 className="icon-button cue-expand"
                 type="button"
                 aria-expanded={isExpanded}
-                aria-label={`${cue.label}の編集項目を${isExpanded ? '閉じる' : '開く'}`}
-                title={isExpanded ? '編集を閉じる' : '編集を開く'}
+                aria-label={t(isExpanded ? 'cue.closeEditAria' : 'cue.openEditAria', {
+                  name: cue.label
+                })}
+                title={t(isExpanded ? 'cue.closeEdit' : 'cue.openEdit')}
                 onClick={(event) => {
                   event.stopPropagation()
                   toggleExpand(cue.id)
@@ -466,18 +484,18 @@ export function CueListPanel({
                   }
                 }}
               >
-                {removeConfirmId === cue.id ? '削除?' : '✕'}
+                {removeConfirmId === cue.id ? t('common.confirmDelete') : '✕'}
               </button>
               {isExpanded && (
                 <>
                   <div className="cue-rename" onClick={(event) => event.stopPropagation()}>
                     <label>
-                      <span>キュー名</span>
+                      <span>{t('cue.name')}</span>
                       <input
                         type="text"
                         defaultValue={cue.label}
                         key={cue.label}
-                        aria-label={`${cue.label}の名前`}
+                        aria-label={t('cue.nameAria', { name: cue.label })}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter') event.currentTarget.blur()
                         }}
@@ -498,17 +516,17 @@ export function CueListPanel({
                     <div className="cue-video-fades" onClick={(event) => event.stopPropagation()}>
                       {(
                         [
-                          ['fadeInMs', 'イン (秒)'],
-                          ['fadeOutMs', 'アウト (秒)']
+                          ['fadeInMs', 'cue.fadeInSeconds'],
+                          ['fadeOutMs', 'cue.fadeOutSeconds']
                         ] as const
-                      ).map(([field, label]) => {
+                      ).map(([field, labelKey]) => {
                         const disabled =
                           cue.materialType === 'video' &&
                           field === 'fadeOutMs' &&
                           cue.endBehavior === 'hold'
                         return (
                           <label key={field}>
-                            <span>{label}</span>
+                            <span>{t(labelKey)}</span>
                             <input
                               type="number"
                               min="0"
@@ -535,7 +553,7 @@ export function CueListPanel({
                         )
                       })}
                       {cue.materialType === 'video' && cue.endBehavior === 'hold' && (
-                        <small>保持時はアウト無効</small>
+                        <small>{t('cue.fadeOutDisabledOnHold')}</small>
                       )}
                     </div>
                   )}
@@ -553,19 +571,14 @@ export function CueListPanel({
       </ol>
       <div className="cue-add">
         <label>
-          <span>追加する素材</span>
+          <span>{t('cue.materialToAdd')}</span>
           <select
             value={selectedMaterial}
             onChange={(event) => setSelectedMaterial(event.target.value)}
           >
-            <option value="black:">黒画面</option>
+            <option value="black:">{t('material.blackScreen')}</option>
             {(['slideshow', 'video', 'still'] as const).map((type) => (
-              <optgroup
-                key={type}
-                label={
-                  type === 'slideshow' ? 'スライドショー' : type === 'video' ? '動画' : '静止画'
-                }
-              >
+              <optgroup key={type} label={t(`material.${type}`)}>
                 {options
                   .filter((item) => item.type === type)
                   .map((item) => (
@@ -578,7 +591,7 @@ export function CueListPanel({
           </select>
         </label>
         <button type="button" disabled={!selectedMaterial} onClick={addCue}>
-          ＋ キュー追加
+          {t('cue.add')}
         </button>
       </div>
     </section>

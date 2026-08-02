@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toThumbUrl } from '../../../shared/mediaUrl'
 import type { PhotoItem, PlaybackCommand } from '../../../shared/types'
+import { useT } from '../i18n/LocaleProvider'
 
 export function MaterialPreview({
   photo,
@@ -15,10 +16,11 @@ export function MaterialPreview({
   send: (command: PlaybackCommand) => void
   onClose: () => void
 }): React.JSX.Element {
+  const t = useT()
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
 
   return (
-    <div className="material-preview" aria-label="素材プレビュー">
+    <div className="material-preview" aria-label={t('preview.material')}>
       <img
         src={toThumbUrl(photo.filePath, 1024, photo.reloadToken)}
         alt={photo.fileName}
@@ -34,21 +36,21 @@ export function MaterialPreview({
         <div className="material-preview-copy">
           <strong title={photo.fileName}>{photo.fileName}</strong>
           <span>
-            リスト {listIndex + 1}番 {' · '}
-            {dimensions ? `${dimensions.width}×${dimensions.height}px` : 'サイズを取得中…'}
+            {t('preview.listPosition', { index: listIndex + 1 })} {' · '}
+            {dimensions ? `${dimensions.width}×${dimensions.height}px` : t('preview.loadingSize')}
           </span>
         </div>
         <div className="material-preview-actions">
           <button
             type="button"
             disabled={photo.excluded}
-            title={photo.excluded ? '除外中の写真は再生できません' : undefined}
+            title={photo.excluded ? t('preview.excludedDisabled') : undefined}
             onClick={() => send({ type: 'jump', index: playableIndex })}
           >
-            ここから再生
+            {t('preview.playFromHere')}
           </button>
           <button type="button" onClick={onClose}>
-            閉じる
+            {t('common.close')}
           </button>
         </div>
       </div>

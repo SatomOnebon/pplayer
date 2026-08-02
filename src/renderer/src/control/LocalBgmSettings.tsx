@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { LocalBgmState, PlaybackCommand } from '../../../shared/types'
 import * as localBgmPlayer from './lib/localBgmPlayer'
 import * as spotifyPlayer from './lib/spotifyPlayer'
+import { useT } from '../i18n/LocaleProvider'
 
 export function LocalBgmSettings({
   localBgm,
@@ -12,6 +13,7 @@ export function LocalBgmSettings({
   send: (command: PlaybackCommand) => void
   variant: 'strip' | 'settings'
 }): React.JSX.Element {
+  const t = useT()
   const snapshot = useSyncExternalStore(localBgmPlayer.subscribe, localBgmPlayer.getSnapshot)
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(
     () => localBgm.playlists[0]?.id ?? ''
@@ -38,17 +40,17 @@ export function LocalBgmSettings({
     <section className="panel remote-panel">
       <div className="panel-heading compact">
         <div>
-          <h2>ローカル BGM</h2>
-          <span>端末内の音源を再生</span>
+          <h2>{t('bgm.localHeading')}</h2>
+          <span>{t('bgm.localDescription')}</span>
         </div>
       </div>
       {variant === 'strip' &&
         (localBgm.playlists.length === 0 ? (
-          <p className="local-bgm-empty">準備モードの「BGM」でプレイリストを作成してください</p>
+          <p className="local-bgm-empty">{t('bgm.createPlaylistHint')}</p>
         ) : (
           <>
             <label className="audio-device-field">
-              <span>プレイリスト</span>
+              <span>{t('bgm.playlist')}</span>
               <select
                 value={selectedPlaylistId}
                 onChange={(event) => setSelectedPlaylistId(event.target.value)}
@@ -66,32 +68,32 @@ export function LocalBgmSettings({
                 disabled={!selectedPlaylist || selectedPlaylist.tracks.length === 0}
                 onClick={playSelected}
               >
-                ▶ 再生
+                {t('common.playWithIcon')}
               </button>
               <button
                 type="button"
                 disabled={!snapshot.playing}
                 onClick={localBgmPlayer.previousTrack}
               >
-                前へ
+                {t('common.previous')}
               </button>
               <button
                 type="button"
                 disabled={!snapshot.playing}
                 onClick={localBgmPlayer.togglePlay}
               >
-                {snapshot.paused ? '再生' : '一時停止'}
+                {snapshot.paused ? t('common.play') : t('common.pause')}
               </button>
               <button type="button" disabled={!snapshot.playing} onClick={localBgmPlayer.nextTrack}>
-                次へ
+                {t('common.next')}
               </button>
             </div>
             <div className="spotify-now-playing">
-              <span>現在の曲</span>
+              <span>{t('bgm.currentTrack')}</span>
               <strong>{snapshot.trackName ?? '—'}</strong>
             </div>
             <label className="spotify-volume">
-              <span>BGM 音量 {Math.round(snapshot.volume * 100)}%</span>
+              <span>{t('bgm.volume', { percent: Math.round(snapshot.volume * 100) })}</span>
               <input
                 type="range"
                 min={0}
@@ -105,19 +107,19 @@ export function LocalBgmSettings({
       {variant === 'settings' && (
         <div className="local-bgm-crossfade">
           <label>
-            <span>曲間</span>
+            <span>{t('bgm.betweenTracks')}</span>
             <select
               value={localBgm.crossfadeMode}
               onChange={(event) =>
                 setCrossfade(event.target.value as 'crossfade' | 'gap', localBgm.fadeMs)
               }
             >
-              <option value="crossfade">クロスフェード</option>
-              <option value="gap">フェードアウト→イン</option>
+              <option value="crossfade">{t('bgm.crossfade')}</option>
+              <option value="gap">{t('bgm.fadeGap')}</option>
             </select>
           </label>
           <label>
-            <span>フェード秒</span>
+            <span>{t('bgm.fadeSeconds')}</span>
             <input
               type="number"
               min={0}
@@ -134,9 +136,9 @@ export function LocalBgmSettings({
           </label>
         </div>
       )}
-      {snapshot.error && (
+      {snapshot.errorKey && (
         <p className="remote-error" role="alert">
-          {snapshot.error}
+          {t(snapshot.errorKey, snapshot.errorParams)}
         </p>
       )}
     </section>

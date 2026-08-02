@@ -7,6 +7,12 @@ interface CacheEntry {
   refCount: number
 }
 
+export class ImageLoadError extends Error {
+  constructor(readonly status: number) {
+    super(`Image load failed: ${status}`)
+  }
+}
+
 export class ImageCache {
   private readonly entries = new Map<string, CacheEntry>()
   private accessCounter = 0
@@ -51,7 +57,7 @@ export class ImageCache {
     }
     entry.promise = fetch(toMediaUrl(filePath, reloadToken))
       .then((response) => {
-        if (!response.ok) throw new Error(`画像を読み込めませんでした: ${response.status}`)
+        if (!response.ok) throw new ImageLoadError(response.status)
         return response.blob()
       })
       .then(createImageBitmap)

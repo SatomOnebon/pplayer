@@ -10,7 +10,7 @@ import {
 import { t as tFn } from '../../../shared/i18n'
 import type { Locale } from '../../../shared/types'
 
-type Translate = (key: string, params?: Record<string, string | number>) => string
+export type Translate = (key: string, params?: Record<string, string | number>) => string
 
 interface LocaleContextValue {
   locale: Locale

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { LocalBgmState, PlaybackCommand } from '../../../shared/types'
+import { useT } from '../i18n/LocaleProvider'
 
 export function LocalBgmLibrary({
   localBgm,
@@ -10,33 +11,34 @@ export function LocalBgmLibrary({
   send: (command: PlaybackCommand) => void
   onMessage: (message: string) => void
 }): React.JSX.Element {
+  const t = useT()
   const [removeKey, setRemoveKey] = useState<string | null>(null)
 
   return (
     <section className="material-section">
       <div className="material-section-heading">
-        <h3>ローカルBGM</h3>
+        <h3>{t('bgm.localHeading')}</h3>
         <button
           type="button"
           onClick={() => {
             const name = window.prompt(
-              'プレイリスト名',
-              `プレイリスト${localBgm.playlists.length + 1}`
+              t('bgm.playlistName'),
+              t('bgm.defaultPlaylistName', { index: localBgm.playlists.length + 1 })
             )
             if (name?.trim()) send({ type: 'addLocalBgmPlaylist', name })
           }}
         >
-          ＋ プレイリスト作成
+          {t('bgm.createPlaylist')}
         </button>
       </div>
       {localBgm.playlists.length === 0 && (
-        <p className="material-empty">ローカルBGMプレイリストはありません</p>
+        <p className="material-empty">{t('bgm.noLocalPlaylists')}</p>
       )}
       {localBgm.playlists.map((playlist) => (
         <article className="material-card" key={playlist.id}>
           <div className="material-card-copy">
             <strong>{playlist.name}</strong>
-            <span>{playlist.tracks.length}曲</span>
+            <span>{t('bgm.trackCount', { count: playlist.tracks.length })}</span>
             {playlist.tracks.map((track) => (
               <span key={track.id} title={track.filePath}>
                 {track.name}{' '}
@@ -50,7 +52,7 @@ export function LocalBgmLibrary({
                     })
                   }
                 >
-                  削除
+                  {t('common.delete')}
                 </button>
               </span>
             ))}
@@ -59,12 +61,12 @@ export function LocalBgmLibrary({
             <button
               type="button"
               onClick={() => {
-                const name = window.prompt('プレイリスト名', playlist.name)
+                const name = window.prompt(t('bgm.playlistName'), playlist.name)
                 if (name?.trim())
                   send({ type: 'renameLocalBgmPlaylist', playlistId: playlist.id, name })
               }}
             >
-              ✎ 名前
+              {t('common.rename')}
             </button>
             <button
               type="button"
@@ -72,20 +74,20 @@ export function LocalBgmLibrary({
                 void window.api.chooseAudio().then((tracks) => {
                   if (tracks.length === 0) return
                   send({ type: 'addLocalBgmTracks', playlistId: playlist.id, tracks })
-                  onMessage(`${tracks.length}曲を追加しました`)
+                  onMessage(t('bgm.addedTracks', { count: tracks.length }))
                 })
               }
             >
-              ＋ 音声を追加
+              {t('bgm.addAudio')}
             </button>
             <button
               type="button"
               onClick={() => {
                 send({ type: 'reloadLocalBgmPlaylist', playlistId: playlist.id })
-                onMessage('プレイリストを再読み込みしました')
+                onMessage(t('bgm.reloadedPlaylist'))
               }}
             >
-              ↻ リロード
+              {t('common.reload')}
             </button>
             <button
               type="button"
@@ -98,7 +100,7 @@ export function LocalBgmLibrary({
                 } else setRemoveKey(key)
               }}
             >
-              {removeKey === `bgm:${playlist.id}` ? '削除?' : '削除'}
+              {removeKey === `bgm:${playlist.id}` ? t('common.confirmDelete') : t('common.delete')}
             </button>
           </div>
         </article>

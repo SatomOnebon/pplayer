@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { PlaybackCommand } from '../../../shared/types'
 import type { EditingAppState } from '../../../shared/migration'
 import type { PlaybackFrame } from '../lib/playbackFrame'
-import { useT } from '../i18n/LocaleProvider'
+import { useLocale, useT } from '../i18n/LocaleProvider'
 import { formatDuration, seconds } from './utils'
 
 export function TransportPanel({
@@ -23,6 +23,7 @@ export function TransportPanel({
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
   const t = useT()
+  const locale = useLocale()
   const volumeFrameRef = useRef<number | null>(null)
   const pendingVolumeRef = useRef<number | null>(null)
   const activeCue = state.cues.find((cue) => cue.id === state.activeCueId)
@@ -160,7 +161,7 @@ export function TransportPanel({
           </div>
           <div>
             <span>{t('transport.totalDuration')}</span>
-            <strong>{formatDuration(totalDurationMs)}</strong>
+            <strong>{formatDuration(totalDurationMs, locale)}</strong>
           </div>
         </div>
       )}

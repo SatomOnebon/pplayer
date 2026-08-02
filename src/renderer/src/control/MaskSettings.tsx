@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { FitMode, MaskConfig, PlaybackCommand, StageAspect } from '../../../shared/types'
 import { fileName } from './utils'
+import { useLocale, useT } from '../i18n/LocaleProvider'
 
 type MaskNumberField = 'sizePercent' | 'offsetXPercent' | 'offsetYPercent'
 
@@ -17,6 +18,8 @@ export function MaskSettings({
   ftbDurationMs: number
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
+  const t = useT()
+  const locale = useLocale()
   const maskFrameRef = useRef<number | null>(null)
   const pendingMaskRef = useRef<MaskConfig | null>(null)
   useEffect(
@@ -48,16 +51,16 @@ export function MaskSettings({
     <section className="panel settings-panel mask-panel" aria-labelledby="mask-heading">
       <div className="panel-heading compact">
         <div>
-          <h2 id="mask-heading">マスク</h2>
-          <span>出力とプレビューに即時反映</span>
+          <h2 id="mask-heading">{t('mask.heading')}</h2>
+          <span>{t('mask.description')}</span>
         </div>
       </div>
       <div
         className="segmented-control fit-segmented-control"
         role="radiogroup"
-        aria-label="出力ステージ"
+        aria-label={t('mask.outputStage')}
       >
-        <span className="segmented-control-title">出力ステージ</span>
+        <span className="segmented-control-title">{t('mask.outputStage')}</span>
         <label className={stageAspect === 'free' ? 'selected' : ''}>
           <input
             type="radio"
@@ -65,7 +68,7 @@ export function MaskSettings({
             checked={stageAspect === 'free'}
             onChange={() => send({ type: 'setStageAspect', stageAspect: 'free' })}
           />
-          画面に合わせる
+          {t('mask.stageFitScreen')}
         </label>
         <label className={stageAspect === '16:9' ? 'selected' : ''}>
           <input
@@ -74,11 +77,11 @@ export function MaskSettings({
             checked={stageAspect === '16:9'}
             onChange={() => send({ type: 'setStageAspect', stageAspect: '16:9' })}
           />
-          16:9 固定
+          {t('mask.stageFixed')}
         </label>
       </div>
       <label className="ftb-duration-field">
-        <span>FTB 時間(秒)</span>
+        <span>{t('mask.ftbDuration')}</span>
         <input
           type="number"
           min="0.1"
@@ -95,9 +98,9 @@ export function MaskSettings({
       <div
         className="segmented-control fit-segmented-control"
         role="radiogroup"
-        aria-label="写真の配置"
+        aria-label={t('mask.photoFit')}
       >
-        <span className="segmented-control-title">写真の配置</span>
+        <span className="segmented-control-title">{t('mask.photoFit')}</span>
         <label className={fit === 'contain' ? 'selected' : ''}>
           <input
             type="radio"
@@ -105,7 +108,7 @@ export function MaskSettings({
             checked={fit === 'contain'}
             onChange={() => send({ type: 'setFit', fit: 'contain' })}
           />
-          全体表示 (contain)
+          {t('mask.fitContainDetailed')}
         </label>
         <label className={fit === 'cover' ? 'selected' : ''}>
           <input
@@ -114,17 +117,17 @@ export function MaskSettings({
             checked={fit === 'cover'}
             onChange={() => send({ type: 'setFit', fit: 'cover' })}
           />
-          画面を埋める (cover)
+          {t('mask.fitCoverDetailed')}
         </label>
       </div>
-      <div className="segmented-control" role="radiogroup" aria-label="マスクモード">
+      <div className="segmented-control" role="radiogroup" aria-label={t('mask.modeLabel')}>
         {(
           [
-            ['none', 'なし'],
-            ['circle', '○ 円形'],
-            ['image', '▧ カスタム画像']
+            ['none', 'mask.mode.none'],
+            ['circle', 'mask.mode.circle'],
+            ['image', 'mask.mode.image']
           ] as const
-        ).map(([mode, label]) => (
+        ).map(([mode, labelKey]) => (
           <label key={mode} className={mask.mode === mode ? 'selected' : ''}>
             <input
               type="radio"
@@ -132,16 +135,16 @@ export function MaskSettings({
               checked={mask.mode === mode}
               onChange={() => queueMask({ ...mask, mode })}
             />
-            {label}
+            {t(labelKey)}
           </label>
         ))}
       </div>
       {mask.mode === 'image' && (
         <div className="mask-file">
           <button type="button" onClick={() => void window.api.chooseMaskImage()}>
-            マスク画像を選択
+            {t('mask.chooseImage')}
           </button>
-          <span title={mask.imagePath ?? undefined}>{fileName(mask.imagePath)}</span>
+          <span title={mask.imagePath ?? undefined}>{fileName(mask.imagePath, locale)}</span>
         </div>
       )}
       {mask.mode !== 'none' && (
@@ -152,17 +155,17 @@ export function MaskSettings({
               checked={mask.invert}
               onChange={(event) => queueMask({ ...mask, invert: event.target.checked })}
             />
-            マスクを反転
+            {t('mask.invert')}
           </label>
           {(
             [
-              ['sizePercent', 'サイズ', 10, 200, 1],
-              ['offsetXPercent', '中心 X', -50, 50, 0.5],
-              ['offsetYPercent', '中心 Y', -50, 50, 0.5]
+              ['sizePercent', 'mask.size', 10, 200, 1],
+              ['offsetXPercent', 'mask.centerX', -50, 50, 0.5],
+              ['offsetYPercent', 'mask.centerY', -50, 50, 0.5]
             ] as const
-          ).map(([field, label, min, max, step]) => (
+          ).map(([field, labelKey, min, max, step]) => (
             <label className="range-field" key={field}>
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
               <input
                 type="range"
                 min={min}
@@ -191,7 +194,7 @@ export function MaskSettings({
               queueMask({ ...mask, sizePercent: 100, offsetXPercent: 0, offsetYPercent: 0 })
             }
           >
-            位置をリセット
+            {t('mask.resetPosition')}
           </button>
         </>
       )}

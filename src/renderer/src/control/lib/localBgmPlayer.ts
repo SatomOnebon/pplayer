@@ -9,7 +9,8 @@ export interface LocalBgmSnapshot {
   trackIndex: number
   trackName: string | null
   volume: number
-  error: string | null
+  errorKey: string | null
+  errorParams?: Record<string, string | number>
 }
 
 const decks = [new Audio(), new Audio()] as const
@@ -21,7 +22,7 @@ let snapshot: LocalBgmSnapshot = {
   trackIndex: 0,
   trackName: null,
   volume: 0.5,
-  error: null
+  errorKey: null
 }
 let activeDeck: 0 | 1 = 0
 let targetVolume = snapshot.volume
@@ -45,8 +46,8 @@ function update(changes: Partial<LocalBgmSnapshot>): void {
   listeners.forEach((listener) => listener())
 }
 
-function reportError(message: string): void {
-  update({ error: message })
+function reportError(key: string, params?: Record<string, string | number>): void {
+  update({ errorKey: key, errorParams: params })
 }
 
 function wait(ms: number): Promise<void> {
@@ -100,7 +101,7 @@ async function startDeck(deck: HTMLAudioElement, index: number, token: number): 
     await deck.play()
     return fadeToken === token
   } catch {
-    if (fadeToken === token) reportError(`「${track.name}」を再生できませんでした`)
+    if (fadeToken === token) reportError('bgm.error.trackPlay', { name: track.name })
     return false
   }
 }
@@ -118,7 +119,8 @@ async function transition(index: number, fadeMsOverride?: number): Promise<void>
     currentPlaylistId: playlist.id,
     trackIndex: index,
     trackName: track.name,
-    error: null
+    errorKey: null,
+    errorParams: undefined
   })
 
   try {
@@ -185,7 +187,7 @@ decks.forEach((deck, deckIndex) => {
   })
   deck.addEventListener('error', () => {
     if (!deck.hasAttribute('src') || deck.src === '' || deck.src === 'about:blank') return
-    if (deckIndex === activeDeck || automaticTransition) reportError('音源を読み込めませんでした')
+    if (deckIndex === activeDeck || automaticTransition) reportError('bgm.error.audioLoad')
   })
 })
 
@@ -203,8 +205,8 @@ export function setOutputDevice(id: string | null): void {
   decks.forEach((deck) => {
     if ('setSinkId' in deck) {
       void deck.setSinkId(outputDeviceId ?? '').catch((error: unknown) => {
-        console.warn('BGM の出力デバイスを変更できませんでした', error)
-        reportError('BGM の出力デバイスを変更できませんでした')
+        console.warn('Could not change the BGM output device', error)
+        reportError('bgm.error.outputDevice')
       })
     }
   })
@@ -217,7 +219,7 @@ export function setCrossfade(mode: 'crossfade' | 'gap', durationMs: number): voi
 
 export function playPlaylist(playlist: LocalBgmPlaylist, index = 0): void {
   if (playlist.tracks.length === 0) {
-    reportError('このプレイリストに曲がありません')
+    reportError('bgm.error.playlistEmpty')
     return
   }
   currentPlaylist = playlist
@@ -231,7 +233,7 @@ export async function transitionToPlaylist(
   transitionFadeMs: number
 ): Promise<void> {
   if (playlist.tracks.length === 0) {
-    reportError('このプレイリストに曲がありません')
+    reportError('bgm.error.playlistEmpty')
     return
   }
   currentPlaylist = playlist
@@ -245,9 +247,9 @@ export function togglePlay(): void {
     void Promise.all(playableDecks.map((deck) => deck.play())).then(
       () => {
         setActiveBgmSource('local')
-        update({ playing: true, paused: false, error: null })
+        update({ playing: true, paused: false, errorKey: null, errorParams: undefined })
       },
-      () => reportError('再生を再開できませんでした')
+      () => reportError('bgm.error.resume')
     )
   } else {
     playableDecks.forEach((deck) => deck.pause())
@@ -299,7 +301,8 @@ export function stop(): void {
     currentPlaylistId: null,
     trackIndex: 0,
     trackName: null,
-    error: null
+    errorKey: null,
+    errorParams: undefined
   })
 }
 

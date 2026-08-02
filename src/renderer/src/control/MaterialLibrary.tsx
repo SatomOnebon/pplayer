@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toThumbUrl } from '../../../shared/mediaUrl'
 import type { FitMode, Materials, MaterialType, PlaybackCommand } from '../../../shared/types'
 import { Thumb } from './Thumb'
+import { useT } from '../i18n/LocaleProvider'
 
 export function MaterialLibrary({
   materials,
@@ -18,9 +19,10 @@ export function MaterialLibrary({
   onPreview: (type: MaterialType, id: string) => void
   onMessage: (message: string) => void
 }): React.JSX.Element {
+  const t = useT()
   const [removeKey, setRemoveKey] = useState<string | null>(null)
   const rename = (type: MaterialType, id: string, current: string): void => {
-    const name = window.prompt('素材名', current)
+    const name = window.prompt(t('material.name'), current)
     if (name?.trim()) send({ type: 'renameMaterial', materialType: type, materialId: id, name })
   }
   const addCue = (type: MaterialType, id: string, label: string): void =>
@@ -41,35 +43,35 @@ export function MaterialLibrary({
   const actions = (type: MaterialType, id: string, name: string): React.JSX.Element => (
     <div className="material-actions">
       <button type="button" onClick={() => rename(type, id, name)}>
-        ✎ 名前
+        {t('common.rename')}
       </button>
       <button type="button" onClick={() => onPreview(type, id)}>
-        ▷ プレビュー
+        {t('material.preview')}
       </button>
       <button type="button" onClick={() => addCue(type, id, name)}>
-        ＋ キューに追加
+        {t('material.addToCue')}
       </button>
       <button
         type="button"
         onClick={() => {
           send({ type: 'reloadMaterial', materialType: type, materialId: id })
-          onMessage('素材を再読み込みしました')
+          onMessage(t('material.reloaded'))
         }}
       >
-        ↻ リロード
+        {t('common.reload')}
       </button>
       <button
         type="button"
         className={removeKey === `${type}:${id}` ? 'danger confirming' : ''}
         onClick={() => remove(type, id)}
       >
-        {removeKey === `${type}:${id}` ? '削除?' : '削除'}
+        {removeKey === `${type}:${id}` ? t('common.confirmDelete') : t('common.delete')}
       </button>
     </div>
   )
   const fitSelect = (type: 'video' | 'still', id: string, fit: FitMode): React.JSX.Element => (
     <label className="material-fit-control">
-      <span>配置</span>
+      <span>{t('material.fit')}</span>
       <select
         value={fit}
         onChange={(event) =>
@@ -81,8 +83,8 @@ export function MaterialLibrary({
           })
         }
       >
-        <option value="contain">全体表示</option>
-        <option value="cover">埋める</option>
+        <option value="contain">{t('material.fitContain')}</option>
+        <option value="cover">{t('material.fitCover')}</option>
       </select>
     </label>
   )
@@ -90,18 +92,18 @@ export function MaterialLibrary({
     <div className="material-library">
       <section className="material-section">
         <div className="material-section-heading">
-          <h3>スライドショー</h3>
+          <h3>{t('material.slideshow')}</h3>
           <button
             type="button"
             onClick={() => {
               const name = window.prompt(
-                'スライドショー名',
-                `スライドショー${materials.slideshows.length + 1}`
+                t('material.slideshowName'),
+                t('material.defaultSlideshowName', { index: materials.slideshows.length + 1 })
               )
               if (name?.trim()) send({ type: 'addSlideshow', name })
             }}
           >
-            ＋ 新規スライドショー
+            {t('material.newSlideshow')}
           </button>
         </div>
         {materials.slideshows.map((item) => {
@@ -111,10 +113,10 @@ export function MaterialLibrary({
               <Thumb src={photo ? toThumbUrl(photo.filePath, 128, photo.reloadToken) : null} />
               <div className="material-card-copy">
                 <strong>{item.name}</strong>
-                <span>{item.photos.length}枚</span>
+                <span>{t('photo.count', { count: item.photos.length })}</span>
               </div>
               <button className="primary-button" type="button" onClick={() => onEdit(item.id)}>
-                編集
+                {t('common.edit')}
               </button>
               {actions('slideshow', item.id, item.name)}
             </article>
@@ -123,28 +125,33 @@ export function MaterialLibrary({
       </section>
       <section className="material-section">
         <div className="material-section-heading">
-          <h3>動画</h3>
+          <h3>{t('material.video')}</h3>
           <button
             type="button"
             onClick={() =>
               void window.api
                 .chooseVideo()
-                .then((added) => added && onMessage('動画素材を追加しました'))
+                .then((added) => added && onMessage(t('material.videoAdded')))
             }
           >
-            ＋ 動画を追加
+            {t('material.addVideo')}
           </button>
         </div>
-        {materials.videos.length === 0 && <p className="material-empty">動画素材はありません</p>}
+        {materials.videos.length === 0 && (
+          <p className="material-empty">{t('material.noVideos')}</p>
+        )}
         {materials.videos.map((item) => (
           <article className="material-card" key={item.id}>
-            <Thumb src={toThumbUrl(item.filePath, 128, item.reloadToken)} fallbackLabel="動画" />
+            <Thumb
+              src={toThumbUrl(item.filePath, 128, item.reloadToken)}
+              fallbackLabel={t('material.video')}
+            />
             <div className="material-card-copy">
               <strong>{item.name}</strong>
               <span title={item.filePath}>{item.filePath.split('/').pop()}</span>
             </div>
             <label className="volume-control">
-              <span>音量 {Math.round(item.volume * 100)}%</span>
+              <span>{t('material.volume', { percent: Math.round(item.volume * 100) })}</span>
               <input
                 type="range"
                 min="0"
@@ -166,19 +173,21 @@ export function MaterialLibrary({
       </section>
       <section className="material-section">
         <div className="material-section-heading">
-          <h3>静止画</h3>
+          <h3>{t('material.still')}</h3>
           <button
             type="button"
             onClick={() =>
               void window.api
                 .chooseStill()
-                .then((added) => added && onMessage('静止画素材を追加しました'))
+                .then((added) => added && onMessage(t('material.stillAdded')))
             }
           >
-            ＋ 静止画を追加
+            {t('material.addStill')}
           </button>
         </div>
-        {materials.stills.length === 0 && <p className="material-empty">静止画素材はありません</p>}
+        {materials.stills.length === 0 && (
+          <p className="material-empty">{t('material.noStills')}</p>
+        )}
         {materials.stills.map((item) => (
           <article className="material-card" key={item.id}>
             <Thumb src={toThumbUrl(item.filePath, 128, item.reloadToken)} />
@@ -196,7 +205,7 @@ export function MaterialLibrary({
                 })
               }
             >
-              {standbyStillId === item.id ? '✓ 蓋絵' : '蓋絵に設定'}
+              {standbyStillId === item.id ? t('material.standbyActive') : t('material.setStandby')}
             </button>
             {fitSelect('still', item.id, item.fit)}
             {actions('still', item.id, item.name)}

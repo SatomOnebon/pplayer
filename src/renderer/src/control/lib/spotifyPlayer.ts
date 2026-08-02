@@ -8,7 +8,8 @@ export interface SpotifyPlayerSnapshot {
   trackName: string | null
   artistName: string | null
   volume: number
-  error: string | null
+  errorKey: string | null
+  errorParams?: Record<string, string | number>
 }
 
 const initialSnapshot: SpotifyPlayerSnapshot = {
@@ -18,7 +19,7 @@ const initialSnapshot: SpotifyPlayerSnapshot = {
   trackName: null,
   artistName: null,
   volume: 0.5,
-  error: null
+  errorKey: null
 }
 
 let snapshot = initialSnapshot
@@ -47,8 +48,8 @@ function update(changes: Partial<SpotifyPlayerSnapshot>): void {
   listeners.forEach((listener) => listener())
 }
 
-function reportError(message: string): void {
-  update({ error: message })
+function reportError(key: string, params?: Record<string, string | number>): void {
+  update({ errorKey: key, errorParams: params })
 }
 
 function run(command: (() => Promise<void>) | undefined, message: string): void {
@@ -65,7 +66,7 @@ function createPlayer(expectedGeneration: number): void {
       void window.api.getSpotifyAccessToken().then((token) => {
         if (token) callback(token)
         else {
-          reportError('Spotify の認証情報を取得できませんでした')
+          reportError('spotify.error.authInfo')
           callback('')
         }
       })
@@ -78,7 +79,7 @@ function createPlayer(expectedGeneration: number): void {
   nextPlayer.addListener('ready', ({ device_id }) => {
     if (player !== nextPlayer) return
     deviceId = device_id
-    update({ ready: true, error: null })
+    update({ ready: true, errorKey: null, errorParams: undefined })
   })
   nextPlayer.addListener('not_ready', ({ device_id }) => {
     if (player !== nextPlayer || deviceId !== device_id) return
@@ -97,25 +98,20 @@ function createPlayer(expectedGeneration: number): void {
       paused: state.paused,
       trackName: track.name,
       artistName: track.artists.map((artist) => artist.name).join(', '),
-      error: null
+      errorKey: null,
+      errorParams: undefined
     })
   })
-  nextPlayer.addListener('initialization_error', () =>
-    reportError('Spotify プレイヤーを初期化できませんでした')
-  )
-  nextPlayer.addListener('authentication_error', () =>
-    reportError('Spotify の認証に失敗しました。再度連携してください')
-  )
-  nextPlayer.addListener('account_error', () => reportError('Premium アカウントが必要です'))
-  nextPlayer.addListener('playback_error', () =>
-    reportError('Spotify の再生中にエラーが発生しました')
-  )
+  nextPlayer.addListener('initialization_error', () => reportError('spotify.error.initialize'))
+  nextPlayer.addListener('authentication_error', () => reportError('spotify.error.authentication'))
+  nextPlayer.addListener('account_error', () => reportError('spotify.error.premiumRequired'))
+  nextPlayer.addListener('playback_error', () => reportError('spotify.error.playback'))
   void nextPlayer
     .connect()
     .then((connected) => {
-      if (!connected) reportError('Spotify プレイヤーに接続できませんでした')
+      if (!connected) reportError('spotify.error.connect')
     })
-    .catch(() => reportError('Spotify プレイヤーに接続できませんでした'))
+    .catch(() => reportError('spotify.error.connect'))
 }
 
 export function subscribe(listener: () => void): () => void {
@@ -131,7 +127,7 @@ export function ensureStarted(): void {
   if (started) return
   started = true
   const expectedGeneration = ++generation
-  update({ error: null })
+  update({ errorKey: null, errorParams: undefined })
 
   if (window.Spotify) {
     createPlayer(expectedGeneration)
@@ -143,7 +139,7 @@ export function ensureStarted(): void {
   const script = document.createElement('script')
   script.src = 'https://sdk.scdn.co/spotify-player.js'
   script.async = true
-  script.onerror = () => reportError('Spotify SDK を読み込めませんでした')
+  script.onerror = () => reportError('spotify.error.sdkLoad')
   document.head.appendChild(script)
 }
 
@@ -163,7 +159,7 @@ export function stopPlayer(): void {
 export async function playContext(contextUri: string, token?: number): Promise<void> {
   const accessToken = await window.api.getSpotifyAccessToken()
   if (!accessToken || !deviceId) {
-    reportError('Spotify デバイスの準備が完了していません')
+    reportError('spotify.error.deviceNotReady')
     return
   }
   try {
@@ -182,10 +178,10 @@ export async function playContext(contextUri: string, token?: number): Promise<v
     if (token === undefined || token === fadeToken) {
       currentContextUri = contextUri
       setActiveBgmSource('spotify')
-      update({ error: null })
+      update({ errorKey: null, errorParams: undefined })
     }
   } catch {
-    reportError('選択したプレイリストを再生できませんでした')
+    reportError('spotify.error.playlistPlay')
   }
 }
 
@@ -194,15 +190,15 @@ export function activate(): void {
 }
 
 export function togglePlay(): void {
-  run(player ? () => player!.togglePlay() : undefined, '再生状態を変更できませんでした')
+  run(player ? () => player!.togglePlay() : undefined, 'spotify.error.togglePlay')
 }
 
 export function nextTrack(): void {
-  run(player ? () => player!.nextTrack() : undefined, '次の曲へ移動できませんでした')
+  run(player ? () => player!.nextTrack() : undefined, 'spotify.error.nextTrack')
 }
 
 export function previousTrack(): void {
-  run(player ? () => player!.previousTrack() : undefined, '前の曲へ移動できませんでした')
+  run(player ? () => player!.previousTrack() : undefined, 'spotify.error.previousTrack')
 }
 
 export function setVolume(volume: number): void {
@@ -211,7 +207,7 @@ export function setVolume(volume: number): void {
   const effectiveVolume = normalized * masterGain
   actualVolume = effectiveVolume
   update({ volume: normalized })
-  run(player ? () => player!.setVolume(effectiveVolume) : undefined, '音量を変更できませんでした')
+  run(player ? () => player!.setVolume(effectiveVolume) : undefined, 'spotify.error.volume')
 }
 
 export function setMasterGain(gain: number): void {
@@ -219,7 +215,7 @@ export function setMasterGain(gain: number): void {
   if (activeRampToken !== null) return
   const effectiveVolume = snapshot.volume * masterGain
   actualVolume = effectiveVolume
-  run(player ? () => player!.setVolume(effectiveVolume) : undefined, '音量を変更できませんでした')
+  run(player ? () => player!.setVolume(effectiveVolume) : undefined, 'spotify.error.volume')
 }
 
 function wait(ms: number): Promise<void> {
@@ -267,7 +263,7 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
   if (bgm.mode === 'stop' && (!player || !deviceId)) return
   if (!player) ensureStarted()
   if (!player || !deviceId) {
-    reportError('Spotify デバイスの準備が完了していません（連携状態を確認してください）')
+    reportError('spotify.error.deviceNotReadyReconnect')
     return
   }
   const token = ++fadeToken
@@ -278,7 +274,7 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
         try {
           await player.togglePlay()
         } catch {
-          reportError('再生状態を変更できませんでした')
+          reportError('spotify.error.togglePlay')
           return
         }
         if (fadeToken !== token) return
@@ -302,7 +298,7 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
   try {
     await player.pause()
   } catch {
-    reportError('Spotify の再生を停止できませんでした')
+    reportError('spotify.error.stop')
   } finally {
     if (fadeToken === token) currentContextUri = null
   }

@@ -37,6 +37,7 @@ import {
   resumeMasterFtb,
   toggleBlackoutState
 } from '../shared/masterFtb'
+import { mt } from './language'
 
 interface PlaybackAnchor {
   currentId: string
@@ -63,7 +64,7 @@ const { outputLocked: _initialOutputLocked, ...INITIAL_SAVED_STATE } = INITIAL_S
 function createEmptySlideshow(): SlideshowMaterial {
   return {
     id: crypto.randomUUID(),
-    name: 'スライドショー1',
+    name: mt('material.defaultSlideshowName', { index: 1 }),
     photos: [],
     timing: { ...INITIAL_STATE.materials.slideshows[0].timing },
     fit: 'contain'
@@ -697,7 +698,7 @@ export class AppStateStore {
 
   private editingSlideshow(): SlideshowMaterial {
     const material = getEditingSlideshow(this.state)
-    if (!material) throw new Error('編集対象のスライドショー素材がありません')
+    if (!material) throw new Error(mt('main.state.noEditingSlideshow'))
     return material
   }
 

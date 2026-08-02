@@ -9,6 +9,7 @@ import {
   type SpotifySettingsState,
   type SpotifySettingsUpdate
 } from '../shared/types'
+import { mt } from './language'
 
 const PORT = 8723
 const REDIRECT_URI = `http://127.0.0.1:${PORT}/callback`
@@ -95,7 +96,7 @@ export class SpotifyController {
 
   async authorize(): Promise<SpotifySettingsState> {
     if (!this.settings.clientId) {
-      this.error = 'Spotify の Client ID を設定してください'
+      this.error = mt('main.spotify.clientIdRequired')
       this.broadcast()
       return this.getState()
     }
@@ -114,7 +115,7 @@ export class SpotifyController {
     try {
       await this.startAuthServer()
       this.authTimeout = setTimeout(() => {
-        this.failAuthorization('認可がタイムアウトしました')
+        this.failAuthorization(mt('main.spotify.authorizationTimeout'))
       }, AUTH_TIMEOUT_MS)
 
       const authUrl =
@@ -131,7 +132,7 @@ export class SpotifyController {
       await shell.openExternal(authUrl)
     } catch (error: unknown) {
       console.warn('Spotify 認可を開始できませんでした', error)
-      this.failAuthorization('Spotify 認可を開始できませんでした')
+      this.failAuthorization(mt('main.spotify.authorizationStartFailed'))
     }
 
     return this.getState()
@@ -230,7 +231,7 @@ export class SpotifyController {
     const url = new URL(requestUrl ?? '/', `http://127.0.0.1:${PORT}`)
     if (url.pathname !== '/callback') {
       response.writeHead(404)
-      response.end('not found')
+      response.end(mt('main.spotify.notFound'))
       return
     }
 
@@ -238,8 +239,8 @@ export class SpotifyController {
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
     if (oauthError || !code || !this.pkceVerifier || !this.authState || state !== this.authState) {
-      sendHtml(response, 'Spotify 認証に失敗しました。アプリに戻ってください。')
-      this.failAuthorization('Spotify 認証がキャンセルされたか、認可コードを取得できませんでした')
+      sendHtml(response, mt('main.spotify.authBrowserFailed'))
+      this.failAuthorization(mt('main.spotify.authorizationFailed'))
       return
     }
 
@@ -268,11 +269,11 @@ export class SpotifyController {
       this.persistAuth()
       this.clearAuthorizationResources()
       this.broadcast()
-      sendHtml(response, '認証が完了しました。アプリに戻ってください。')
+      sendHtml(response, mt('main.spotify.authBrowserSucceeded'))
     } catch (error: unknown) {
       console.warn('Spotify トークン交換に失敗しました', error)
-      sendHtml(response, 'Spotify 認証に失敗しました。アプリに戻ってください。')
-      this.failAuthorization('Spotify のトークン交換に失敗しました')
+      sendHtml(response, mt('main.spotify.authBrowserFailed'))
+      this.failAuthorization(mt('main.spotify.tokenExchangeFailed'))
     }
   }
 
@@ -320,8 +321,7 @@ export class SpotifyController {
     }
     if (!safeStorage.isEncryptionAvailable()) {
       console.warn('暗号化ストレージを利用できないため Spotify 認証情報を保存しません')
-      this.error =
-        '認証は成功しましたが、この環境では暗号化保存できないため再起動後に連携が無効になります'
+      this.error = mt('main.spotify.encryptionUnavailable')
       return
     }
     try {

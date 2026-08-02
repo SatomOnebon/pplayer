@@ -7,6 +7,7 @@ import { cycleDuration, type TimelineCycle } from '../shared/timeline'
 import { ffmpegClipOpacityExpr } from '../shared/easing'
 import { IPC, type ExportConfig, type ExportProgress } from '../shared/types'
 import { isExportConfig, isFiniteNumber, isTimelineCycles } from './validation'
+import { mt } from './language'
 
 function broadcast(progress: ExportProgress): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -77,9 +78,7 @@ export function buildFfmpegArgs(
     ].join(',')
     streams.push(`[${index}:v]${baseFilters}[base${index}]`)
     streams.push(`${rampFilters}[ramp${index}]`)
-    streams.push(
-      `[base${index}][ramp${index}]blend=all_mode=multiply:shortest=1[v${index}]`
-    )
+    streams.push(`[base${index}][ramp${index}]blend=all_mode=multiply:shortest=1[v${index}]`)
   }
   const inputs = cycles.map((_, index) => `[v${index}]`).join('')
   const finalConversion =
@@ -119,24 +118,24 @@ class ExportManager {
 
   async writeFrame(index: number, frame: ArrayBuffer, total: number): Promise<void> {
     if (!Number.isInteger(index) || index < 0 || !Number.isInteger(total) || total < 1) {
-      throw new Error('不正なフレーム番号です')
+      throw new Error(mt('main.export.invalidFrameNumber'))
     }
-    if (this.process) throw new Error('エンコード中はフレームを書き込めません')
+    if (this.process) throw new Error(mt('main.export.frameDuringEncoding'))
     if (index === 0) {
-      if (this.composing) throw new Error('書き出しはすでに進行中です')
+      if (this.composing) throw new Error(mt('main.export.alreadyRunning'))
       await rm(this.tempDirectory, { recursive: true, force: true })
       await mkdir(this.tempDirectory, { recursive: true })
       this.composing = true
       this.cancelled = false
       this.outputPath = null
     }
-    if (!this.composing || this.cancelled) throw new Error('書き出しはキャンセルされました')
+    if (!this.composing || this.cancelled) throw new Error(mt('main.export.cancelled'))
 
     await writeFile(
       join(this.tempDirectory, `frame-${index.toString().padStart(4, '0')}.png`),
       Buffer.from(frame)
     )
-    if (this.cancelled) throw new Error('書き出しはキャンセルされました')
+    if (this.cancelled) throw new Error(mt('main.export.cancelled'))
     const current = index + 1
     broadcast({
       stage: 'composing',
@@ -147,9 +146,9 @@ class ExportManager {
   }
 
   async start(config: ExportConfig, cycles: ReadonlyArray<TimelineCycle>): Promise<void> {
-    if (this.process || !this.composing) throw new Error('書き出しを開始できません')
-    if (this.cancelled) throw new Error('書き出しはキャンセルされました')
-    if (cycles.length < 1) throw new Error('写真がありません')
+    if (this.process || !this.composing) throw new Error(mt('main.export.cannotStart'))
+    if (this.cancelled) throw new Error(mt('main.export.cancelled'))
+    if (cycles.length < 1) throw new Error(mt('main.export.noPhotos'))
 
     const normalizedConfig: ExportConfig = {
       width: evenDimension(config.width),
@@ -159,15 +158,15 @@ class ExportManager {
       outputPath: config.outputPath
     }
     if (![24, 25, 29.97, 30, 59.94, 60].includes(normalizedConfig.fps)) {
-      throw new Error('不正な fps です')
+      throw new Error(mt('main.export.invalidFps'))
     }
     if (!['hevc10', 'h264'].includes(normalizedConfig.codec)) {
-      throw new Error('不正な codec です')
+      throw new Error(mt('main.export.invalidCodec'))
     }
-    if (!normalizedConfig.outputPath) throw new Error('書き出し先が選択されていません')
+    if (!normalizedConfig.outputPath) throw new Error(mt('main.export.noOutputPath'))
 
     const executable = ffmpegStatic?.replace('app.asar', 'app.asar.unpacked')
-    if (!executable) throw new Error('ffmpeg が見つかりません')
+    if (!executable) throw new Error(mt('main.export.ffmpegNotFound'))
     this.composing = false
     this.outputPath = normalizedConfig.outputPath
     this.stderrLines = []
@@ -251,7 +250,9 @@ class ExportManager {
         current: 0,
         total: 0,
         percent: 0,
-        message: this.stderrLines.slice(-8).join('\n') || `ffmpeg 終了コード: ${String(code)}`
+        message:
+          this.stderrLines.slice(-8).join('\n') ||
+          mt('main.export.ffmpegExitCode', { code: String(code) })
       })
     }
     await this.cleanup()
@@ -278,7 +279,7 @@ export function registerExportIpc(): void {
         !Number.isInteger(total) ||
         total < 1
       ) {
-        return '不正な書き出しフレームです'
+        return mt('main.export.invalidFrame')
       }
       return manager.writeFrame(index, frame, total)
     }
@@ -287,7 +288,7 @@ export function registerExportIpc(): void {
     IPC.exportStart,
     (_event, config: unknown, cycles: unknown): Promise<void> | string => {
       if (!isExportConfig(config) || !isTimelineCycles(cycles)) {
-        return '不正な書き出し設定です'
+        return mt('main.export.invalidConfig')
       }
       return manager.start(config, cycles)
     }

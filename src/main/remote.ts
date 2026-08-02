@@ -17,6 +17,7 @@ import {
   routeRemoteRequest
 } from './remoteRouting'
 import { sendSpotifyControl } from './windows'
+import { mt } from './language'
 
 const DEFAULT_SETTINGS: RemoteSettings = {
   globalShortcutsEnabled: true,
@@ -98,7 +99,7 @@ export class RemoteController {
       .then(() => this.performRestart(generation))
       .catch((error: unknown) => {
         if (generation !== this.serverGeneration) return
-        this.listenError = `HTTP API の再起動に失敗しました: ${errorMessage(error)}`
+        this.listenError = mt('main.remote.restartFailed', { detail: errorMessage(error) })
         console.warn(this.listenError)
         this.broadcast()
       })
@@ -116,7 +117,7 @@ export class RemoteController {
     server.once('error', (error) => {
       if (this.server !== server || generation !== this.serverGeneration) return
       this.server = null
-      this.listenError = `HTTP API を開始できません: ${error.message}`
+      this.listenError = mt('main.remote.startFailed', { detail: error.message })
       console.warn(this.listenError)
       this.broadcast()
     })
@@ -153,16 +154,16 @@ export class RemoteController {
   ): void {
     try {
       if (method !== 'GET' && method !== 'POST') {
-        sendJson(response, 405, { ok: false, error: 'GET または POST を使用してください' })
+        sendJson(response, 405, { ok: false, error: mt('main.remote.methodNotAllowed') })
         return
       }
       const url = parseRemoteRequestUrl(requestUrl, this.settings.port)
       if (!url) {
-        sendJson(response, 400, { ok: false, error: 'リクエスト URL が不正です' })
+        sendJson(response, 400, { ok: false, error: mt('main.remote.invalidUrl') })
         return
       }
       if (!isAuthorizedRequest(this.settings.token, authorization, url)) {
-        sendJson(response, 401, { ok: false, error: '認証に失敗しました' })
+        sendJson(response, 401, { ok: false, error: mt('main.remote.unauthorized') })
         return
       }
       const route = routeRemoteRequest(url, this.stateStore.getState())
@@ -187,7 +188,7 @@ export class RemoteController {
       sendJson(response, 200, { ok: true })
     } catch {
       try {
-        sendJson(response, 500, { ok: false, error: 'サーバ内部エラー' })
+        sendJson(response, 500, { ok: false, error: mt('main.remote.serverError') })
       } catch {
         // 切断済みソケットへの書き込み失敗はリクエスト内に閉じ込める。
       }

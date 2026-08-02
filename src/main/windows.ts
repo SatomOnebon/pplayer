@@ -3,6 +3,7 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { IPC, type DisplayBounds, type SpotifyControlAction } from '../shared/types'
+import { mt } from './language'
 
 let controlWindow: BrowserWindow | null = null
 let displayWindow: BrowserWindow | null = null
@@ -208,7 +209,7 @@ export function createWindows(): void {
   quitting = false
   registerScreenListeners()
   controlWindow = new BrowserWindow({
-    title: 'pplayer — 操作',
+    title: mt('app.controlTitle'),
     width: 1200,
     height: 800,
     show: false,
@@ -225,7 +226,7 @@ export function createWindows(): void {
   loadRenderer(controlWindow, 'control.html')
 
   displayWindow = new BrowserWindow({
-    title: 'pplayer — 表示',
+    title: mt('app.displayTitle'),
     width: 960,
     height: 540,
     show: false,

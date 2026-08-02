@@ -29,7 +29,7 @@ import { RemoteActions } from './remoteActions'
 import { registerRemoteIpc, RemoteController } from './remote'
 import { PowerBlockerController, registerPowerIpc } from './powerBlocker'
 import { registerSpotifyIpc, SpotifyController } from './spotify'
-import { LanguageController, registerLanguageIpc } from './language'
+import { LanguageController, mt, registerLanguageIpc } from './language'
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -299,9 +299,9 @@ function registerIpc(): void {
 
   ipcMain.handle(IPC.choosePhotos, async () => {
     const result = await dialog.showOpenDialog({
-      title: '写真を選択',
+      title: mt('dialog.choosePhotos'),
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: '画像', extensions: ['jpg', 'jpeg', 'png'] }]
+      filters: [{ name: mt('dialog.filter.image'), extensions: ['jpg', 'jpeg', 'png'] }]
     })
     if (result.canceled) return undefined
     return addPhotoPaths(result.filePaths)
@@ -318,7 +318,7 @@ function registerIpc(): void {
 
   ipcMain.handle(IPC.choosePhotosFolder, async () => {
     const result = await dialog.showOpenDialog({
-      title: '写真フォルダを選択',
+      title: mt('dialog.choosePhotosFolder'),
       properties: ['openDirectory']
     })
     if (result.canceled) return undefined
@@ -327,9 +327,9 @@ function registerIpc(): void {
 
   ipcMain.handle(IPC.chooseMaskImage, async () => {
     const result = await dialog.showOpenDialog({
-      title: 'マスク画像を選択',
+      title: mt('dialog.chooseMaskImage'),
       properties: ['openFile'],
-      filters: [{ name: 'PNG画像', extensions: ['png'] }]
+      filters: [{ name: mt('dialog.filter.pngImage'), extensions: ['png'] }]
     })
     if (result.canceled || result.filePaths.length === 0) return
     stateStore.apply({
@@ -340,9 +340,9 @@ function registerIpc(): void {
 
   ipcMain.handle(IPC.chooseVideo, async () => {
     const result = await dialog.showOpenDialog({
-      title: '動画を選択',
+      title: mt('dialog.chooseVideo'),
       properties: ['openFile'],
-      filters: [{ name: '動画', extensions: ['mp4', 'mov'] }]
+      filters: [{ name: mt('dialog.filter.video'), extensions: ['mp4', 'mov'] }]
     })
     const filePath = result.filePaths[0]
     if (result.canceled || !filePath) return false
@@ -353,9 +353,14 @@ function registerIpc(): void {
 
   ipcMain.handle(IPC.chooseAudio, async () => {
     const result = await dialog.showOpenDialog({
-      title: '音声ファイルを選択',
+      title: mt('dialog.chooseAudio'),
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: '音声', extensions: ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus'] }]
+      filters: [
+        {
+          name: mt('dialog.filter.audio'),
+          extensions: ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus']
+        }
+      ]
     })
     if (result.canceled) return []
     return result.filePaths.map((filePath) => ({
@@ -366,9 +371,9 @@ function registerIpc(): void {
 
   ipcMain.handle(IPC.chooseStill, async () => {
     const result = await dialog.showOpenDialog({
-      title: '静止画を選択',
+      title: mt('dialog.chooseStill'),
       properties: ['openFile'],
-      filters: [{ name: '画像', extensions: ['jpg', 'jpeg', 'png'] }]
+      filters: [{ name: mt('dialog.filter.image'), extensions: ['jpg', 'jpeg', 'png'] }]
     })
     const filePath = result.filePaths[0]
     if (result.canceled || !filePath) return false
@@ -397,9 +402,9 @@ function registerIpc(): void {
   ipcMain.handle(IPC.chooseExportPath, async (_event, ...args: unknown[]) => {
     if (args.length > 0) return undefined
     const result = await dialog.showSaveDialog({
-      title: 'MP4 書き出し先を選択',
+      title: mt('dialog.chooseExportPath'),
       defaultPath: 'slideshow.mp4',
-      filters: [{ name: 'MP4 動画', extensions: ['mp4'] }]
+      filters: [{ name: mt('dialog.filter.mp4Video'), extensions: ['mp4'] }]
     })
     return result.canceled ? undefined : result.filePath
   })

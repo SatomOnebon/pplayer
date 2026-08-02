@@ -28,6 +28,7 @@ import {
   type LegacyBlackStillMaterial
 } from '../shared/migration'
 import { normalizeFtbDurationMs } from '../shared/masterFtb'
+import { mt } from './language'
 import type { AppStateStore } from './state'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -145,17 +146,17 @@ function parsePhoto(value: unknown): PhotoItem | null {
 }
 
 function parseV1(value: Record<string, unknown>): ProjectStateV1 {
-  if (!Array.isArray(value.photos)) throw new Error('写真リストの形式が正しくありません')
+  if (!Array.isArray(value.photos)) throw new Error(mt('main.project.invalidPhotoList'))
   const photos = value.photos.map((photo) => {
     const parsed = parsePhoto(photo)
-    if (!parsed) throw new Error('写真リストに不正な項目があります')
+    if (!parsed) throw new Error(mt('main.project.invalidPhotoItem'))
     const { filePath, excluded, fit, fadeInMs, holdMs, fadeOutMs } = parsed
     return { filePath, excluded, fit, fadeInMs, holdMs, fadeOutMs } satisfies ProjectPhoto
   })
   const timing = parseTiming(value.timing)
   const mask = parseMask(value.mask)
   if (!timing || !mask || !isFitMode(value.fit) || typeof value.loop !== 'boolean') {
-    throw new Error('設定の形式が正しくありません')
+    throw new Error(mt('main.project.invalidSettings'))
   }
   return { photos, timing, mask, fit: value.fit, loop: value.loop }
 }
@@ -322,9 +323,9 @@ function parseMaterials(value: unknown): ParsedMaterials | null {
 
 export function parseProject(value: unknown): ProjectState {
   if (!isRecord(value) || value.app !== 'pplayer')
-    throw new Error('pplayer のプロジェクトファイルではありません')
+    throw new Error(mt('main.project.notPplayerProject'))
   if (value.version === 1) return migrateV1Project(parseV1(value))
-  if (value.version !== 2) throw new Error('対応していないプロジェクトバージョンです')
+  if (value.version !== 2) throw new Error(mt('main.project.unsupportedVersion'))
   const parsedMaterials = parseMaterials(value.materials)
   const mask = parseMask(value.mask)
   const stageAspect = parseStageAspect(value.stageAspect)
@@ -344,7 +345,7 @@ export function parseProject(value: unknown): ProjectState {
       value.editingSlideshowId !== null &&
       typeof value.editingSlideshowId !== 'string')
   )
-    throw new Error('version 2 の設定形式が正しくありません')
+    throw new Error(mt('main.project.invalidV2Settings'))
   const migrated = migrateBlackStillMaterials({
     materials: parsedMaterials,
     cues: cues as Cue[],
@@ -362,13 +363,13 @@ export function parseProject(value: unknown): ProjectState {
         cue.materialType !== 'black' && !materialIds.has(`${cue.materialType}:${cue.materialId}`)
     )
   ) {
-    throw new Error('存在しない素材を参照するキューがあります')
+    throw new Error(mt('main.project.missingCueMaterial'))
   }
   if (
     migrated.standbyStillId !== null &&
     !materials.stills.some((material) => material.id === migrated.standbyStillId)
   ) {
-    throw new Error('蓋絵が存在しない静止画素材を参照しています')
+    throw new Error(mt('main.project.missingStandbyStill'))
   }
   const editingSlideshowId =
     typeof value.editingSlideshowId === 'string' &&
@@ -401,12 +402,12 @@ export function registerProjectIpc(stateStore: AppStateStore): void {
   ipcMain.handle(
     IPC.projectSave,
     async (_event, ...args: unknown[]): Promise<ProjectSaveResult | undefined> => {
-      if (args.length > 0) return { error: '不正なプロジェクト保存リクエストです' }
+      if (args.length > 0) return { error: mt('main.project.invalidSaveRequest') }
       const result = await dialog.showSaveDialog({
-        title: 'プロジェクトを保存',
+        title: mt('dialog.saveProject'),
         defaultPath: 'slideshow.pplayer',
         filters: [
-          { name: 'pplayer プロジェクト', extensions: ['pplayer'] },
+          { name: mt('dialog.filter.pplayerProject'), extensions: ['pplayer'] },
           { name: 'JSON', extensions: ['json'] }
         ]
       })
@@ -456,7 +457,9 @@ export function registerProjectIpc(stateStore: AppStateStore): void {
         return { saved: true }
       } catch (error) {
         return {
-          error: `プロジェクトを保存できませんでした: ${error instanceof Error ? error.message : String(error)}`
+          error: mt('main.project.saveFailed', {
+            detail: error instanceof Error ? error.message : String(error)
+          })
         }
       }
     }
@@ -465,12 +468,12 @@ export function registerProjectIpc(stateStore: AppStateStore): void {
   ipcMain.handle(
     IPC.projectLoad,
     async (_event, ...args: unknown[]): Promise<ProjectLoadResult | undefined> => {
-      if (args.length > 0) return { error: '不正なプロジェクト読み込みリクエストです' }
+      if (args.length > 0) return { error: mt('main.project.invalidLoadRequest') }
       const result = await dialog.showOpenDialog({
-        title: 'プロジェクトを読み込み',
+        title: mt('dialog.loadProject'),
         properties: ['openFile'],
         filters: [
-          { name: 'pplayer プロジェクト', extensions: ['pplayer'] },
+          { name: mt('dialog.filter.pplayerProject'), extensions: ['pplayer'] },
           { name: 'JSON', extensions: ['json'] }
         ]
       })
@@ -510,11 +513,11 @@ export function registerProjectIpc(stateStore: AppStateStore): void {
       } catch (error) {
         const detail =
           error instanceof SyntaxError
-            ? 'JSONが壊れています'
+            ? mt('main.project.invalidJson')
             : error instanceof Error
               ? error.message
               : String(error)
-        return { error: `プロジェクトを読み込めませんでした: ${detail}` }
+        return { error: mt('main.project.loadFailed', { detail }) }
       }
     }
   )

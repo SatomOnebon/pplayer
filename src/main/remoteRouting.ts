@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import type { AppState, PlaybackCommand, SpotifyControlAction } from '../shared/types'
+import { mt } from './language'
 
 export type RemoteRoute =
   | { type: 'command'; command: PlaybackCommand }
@@ -65,7 +66,7 @@ export function routeRemoteRequest(url: URL, state: AppState): RemoteRoute {
   if (cueMatch) {
     const index = cueNumberToIndex(cueMatch[2])
     const cue = index === null ? undefined : state.cues[index]
-    if (!cue) return { type: 'notFound', error: 'キューが見つかりません' }
+    if (!cue) return { type: 'notFound', error: mt('main.remote.cueNotFound') }
     return {
       type: 'command',
       command: { type: cueMatch[1] === 'fire' ? 'fireCue' : 'armCue', id: cue.id }
@@ -86,18 +87,18 @@ export function routeRemoteRequest(url: URL, state: AppState): RemoteRoute {
   if (path === '/api/volume/set') {
     const raw = url.searchParams.get('value')
     if (raw === null || raw.trim() === '' || !Number.isFinite(Number(raw))) {
-      return { type: 'badRequest', error: 'value は 0〜100 の数値で指定してください' }
+      return { type: 'badRequest', error: mt('main.remote.volumeNotNumeric') }
     }
     const value = Number(raw)
     if (value < 0 || value > 100) {
-      return { type: 'badRequest', error: 'value は 0〜100 の範囲で指定してください' }
+      return { type: 'badRequest', error: mt('main.remote.volumeOutOfRange') }
     }
     return { type: 'command', command: { type: 'setMasterVolume', volume: value / 100 } }
   }
   if (path === '/api/volume/mute') {
     return { type: 'command', command: { type: 'setMasterVolume', volume: 0 } }
   }
-  return { type: 'notFound', error: 'エンドポイントが見つかりません' }
+  return { type: 'notFound', error: mt('main.remote.endpointNotFound') }
 }
 
 export function remoteStatus(state: AppState): {

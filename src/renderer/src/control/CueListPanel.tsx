@@ -55,13 +55,31 @@ function cueThumbnailSource(cue: Cue, materials: Materials): string | null {
   return material ? toThumbUrl(material.filePath, 128, material.reloadToken) : null
 }
 
-function cueBgmSummary(cue: Cue, localPlaylists: LocalBgmPlaylist[], t: Translate): string {
+type CueBgmSummary = { kind: 'continue' | 'stop' | 'spotify' | 'local'; text: string }
+
+function cueBgmSummary(
+  cue: Cue,
+  localPlaylists: LocalBgmPlaylist[],
+  spotifyPlaylists: SpotifyPlaylist[],
+  t: Translate
+): CueBgmSummary {
   const bgm = cue.bgm
-  if (!bgm || bgm.mode === 'continue') return t('cue.bgm.continue')
-  if (bgm.mode === 'stop') return t('cue.bgm.stopSummary')
-  if (bgm.source === 'spotify') return t('cue.bgm.spotifySummary')
+  if (!bgm || bgm.mode === 'continue') return { kind: 'continue', text: t('cue.bgm.continue') }
+  if (bgm.mode === 'stop') return { kind: 'stop', text: t('cue.bgm.stopSummary') }
+  if (bgm.source === 'spotify') {
+    const playlist = spotifyPlaylists.find((item) => item.uri === bgm.uri)
+    return {
+      kind: 'spotify',
+      text: playlist
+        ? t('cue.bgm.spotifyNamed', { name: playlist.name })
+        : t('cue.bgm.spotifySummary')
+    }
+  }
   const playlist = localPlaylists.find((item) => item.id === bgm.playlistId)
-  return t('cue.bgm.localSummary', { name: playlist?.name ?? t('bgm.local') })
+  return {
+    kind: 'local',
+    text: t('cue.bgm.localSummary', { name: playlist?.name ?? t('bgm.local') })
+  }
 }
 
 function CueBgmControl({
@@ -426,9 +444,18 @@ export function CueListPanel({
                   </span>
                   {isActive && <span className="running-marker">{t('status.playing')}</span>}
                   {isArmed && <span className="armed-marker">{t('cue.nextMarker')}</span>}
-                  {!isExpanded && (
-                    <span className="cue-bgm-summary">{cueBgmSummary(cue, localPlaylists, t)}</span>
-                  )}
+                  {!isExpanded &&
+                    (() => {
+                      const summary = cueBgmSummary(cue, localPlaylists, playlists, t)
+                      return (
+                        <span
+                          className={`cue-bgm-summary cue-bgm-summary--${summary.kind}`}
+                          title={summary.text}
+                        >
+                          {summary.text}
+                        </span>
+                      )
+                    })()}
                 </div>
               </div>
               {cue.materialType === 'still' || cue.materialType === 'black' ? (

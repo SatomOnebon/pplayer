@@ -121,6 +121,7 @@ button:disabled {
   margin: 0;
   padding: 8px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   list-style: none;
 }
 
@@ -134,8 +135,8 @@ button:disabled {
   border-radius: 8px;
   background: #181c23;
   cursor: pointer;
-  gap: 6px;
-  grid-template-columns: 14px 22px 64px minmax(70px, 1fr) minmax(112px, 140px) 36px 40px;
+  gap: 5px;
+  grid-template-columns: 14px 20px 64px minmax(64px, 1fr) minmax(90px, 122px) 32px 36px;
 }
 
 .cue-row.has-details {
@@ -310,6 +311,21 @@ button:disabled {
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cue-bgm-summary--spotify {
+  color: #1ed760;
+  background: #14261a;
+}
+
+.cue-bgm-summary--local {
+  color: #83d0a6;
+  background: #15241c;
+}
+
+.cue-bgm-summary--stop {
+  color: #d59089;
+  background: #2a1a18;
 }
 
 .cue-markers {
@@ -991,7 +1007,7 @@ button:disabled {
 
 .show-layout {
   display: grid;
-  grid-template-columns: minmax(330px, 0.95fr) minmax(330px, 1.1fr) minmax(240px, 0.75fr);
+  grid-template-columns: minmax(400px, 1.05fr) minmax(320px, 1fr) minmax(230px, 0.72fr);
   gap: 8px;
   height: calc(100vh - 110px);
   min-height: 0;

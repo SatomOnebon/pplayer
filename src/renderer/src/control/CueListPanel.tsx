@@ -452,6 +452,11 @@ export function CueListPanel({
                           className={`cue-bgm-summary cue-bgm-summary--${summary.kind}`}
                           title={summary.text}
                         >
+                          {summary.kind === 'spotify' && (
+                            <span className="spotify-badge" aria-hidden="true">
+                              S
+                            </span>
+                          )}
                           {summary.text}
                         </span>
                       )

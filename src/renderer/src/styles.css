@@ -314,8 +314,26 @@ button:disabled {
 }
 
 .cue-bgm-summary--spotify {
-  color: #1ed760;
-  background: #14261a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #cfe7d8;
+  background: #16281d;
+}
+
+.spotify-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #1ed760;
+  color: #06210f;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .cue-bgm-summary--local {

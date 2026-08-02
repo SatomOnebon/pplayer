@@ -302,6 +302,13 @@ export async function transitionToBgm(bgm: CueBgm): Promise<void> {
   } catch {
     reportError('spotify.error.stop')
   } finally {
-    if (fadeToken === token) currentContextUri = null
+    if (fadeToken === token) {
+      currentContextUri = null
+      // フェードアウトで 0 にした実音量を、一時停止中に実効音量へ静かに戻す
+      // （次の手動 Play / togglePlay が無音にならないように。停止中なので可聴ポップは出ない）
+      const effective = snapshot.volume * masterGain
+      actualVolume = effective
+      if (player) void player.setVolume(effective)
+    }
   }
 }

@@ -125,6 +125,19 @@ button:disabled {
   list-style: none;
 }
 
+.cue-rows::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cue-rows::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: #3a4250;
+}
+
+.cue-rows::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .cue-row {
   display: grid;
   min-height: 52px;
@@ -136,7 +149,7 @@ button:disabled {
   background: #181c23;
   cursor: pointer;
   gap: 5px;
-  grid-template-columns: 14px 20px 64px minmax(64px, 1fr) minmax(90px, 122px) 32px 36px;
+  grid-template-columns: 14px 18px 64px minmax(60px, 1fr) minmax(84px, 116px) 36px 40px;
 }
 
 .cue-row.has-details {
@@ -1025,7 +1038,7 @@ button:disabled {
 
 .show-layout {
   display: grid;
-  grid-template-columns: minmax(400px, 1.05fr) minmax(320px, 1fr) minmax(230px, 0.72fr);
+  grid-template-columns: minmax(388px, 1.05fr) minmax(314px, 1fr) minmax(230px, 0.72fr);
   gap: 8px;
   height: calc(100vh - 110px);
   min-height: 0;

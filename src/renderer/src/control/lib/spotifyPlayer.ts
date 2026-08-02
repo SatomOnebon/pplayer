@@ -248,7 +248,9 @@ async function rampVolume(to: number, ms: number, token: number): Promise<void> 
   } finally {
     if (activeRampToken === token) {
       activeRampToken = null
-      if (fadeToken === token && player) {
+      // フェードイン（target>0）完了後のみ、フェード中に変わった master ゲインへ収束させる。
+      // フェードアウト（target===0）では 0 のまま維持する（再適用するとフルへ戻り、後続のフェードインを潰す）。
+      if (target > 0 && fadeToken === token && player) {
         const effective = snapshot.volume * masterGain
         actualVolume = effective
         void player.setVolume(effective)

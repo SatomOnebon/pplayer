@@ -288,6 +288,7 @@ const ja: Messages = {
   'mask.centerY': '中心 Y',
   'mask.resetPosition': '位置をリセット',
   'remote.heading': 'リモート制御',
+  'remote.subtitle': 'Stream Deck / Companion',
   'remote.globalShortcuts': 'グローバルショートカット（Stream Deck 用）',
   'remote.bgmShortcutNote':
     'BGM 操作（B / N / V）は現在再生中のソース（ローカル / Spotify）に適用されます。',
@@ -694,6 +695,7 @@ const en: Messages = {
   'mask.centerY': 'Center Y',
   'mask.resetPosition': 'Reset Position',
   'remote.heading': 'Remote Control',
+  'remote.subtitle': 'Stream Deck / Companion',
   'remote.globalShortcuts': 'Global Shortcuts (Stream Deck)',
   'remote.bgmShortcutNote': 'BGM keys (B / N / V) control the active source (Local / Spotify).',
   'remote.shortcutsFailedAll': 'Could not register any shortcuts',

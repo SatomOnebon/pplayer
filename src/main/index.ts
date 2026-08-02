@@ -44,6 +44,7 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
+const languageController = new LanguageController()
 const stateStore = new AppStateStore()
 const remoteActions = new RemoteActions(stateStore)
 const remoteController = new RemoteController(stateStore, remoteActions, (enabled) => {
@@ -53,7 +54,6 @@ const remoteController = new RemoteController(stateStore, remoteActions, (enable
 })
 const powerBlocker = new PowerBlockerController()
 const spotifyController = new SpotifyController()
-const languageController = new LanguageController()
 const PHOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png'])
 const THUMBNAIL_CACHE_LIMIT = 300
 const thumbnailCache = new Map<string, Buffer>()

@@ -19,6 +19,7 @@ export class LanguageController {
   constructor() {
     const saved = this.persistence.get('language')
     this.language = saved ?? 'ja'
+    currentLocale = this.language
   }
 
   start(): void {

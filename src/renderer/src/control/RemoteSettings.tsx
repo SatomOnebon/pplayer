@@ -36,7 +36,7 @@ export function RemoteSettings(): React.JSX.Element {
       <div className="panel-heading compact">
         <div>
           <h2>{t('remote.heading')}</h2>
-          <span>Stream Deck / Companion</span>
+          <span>{t('remote.subtitle')}</span>
         </div>
       </div>
       <label className="remote-toggle">

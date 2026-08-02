@@ -28,6 +28,10 @@ export function LocaleProvider({ children }: { children: ReactNode }): React.JSX
     return off
   }, [])
 
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+
   const translate = useCallback<Translate>((key, params) => tFn(locale, key, params), [locale])
   const value = useMemo(() => ({ locale, t: translate }), [locale, translate])
 

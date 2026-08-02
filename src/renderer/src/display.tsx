@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PlaybackCanvas } from './lib/PlaybackCanvas'
 import { useAppState } from './useAppState'
+import { LocaleProvider } from './i18n/LocaleProvider'
 import './styles.css'
 
 export function Display(): React.JSX.Element {
@@ -16,6 +17,8 @@ export function Display(): React.JSX.Element {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Display />
+    <LocaleProvider>
+      <Display />
+    </LocaleProvider>
   </StrictMode>
 )

@@ -29,6 +29,7 @@ import { RemoteActions } from './remoteActions'
 import { registerRemoteIpc, RemoteController } from './remote'
 import { PowerBlockerController, registerPowerIpc } from './powerBlocker'
 import { registerSpotifyIpc, SpotifyController } from './spotify'
+import { LanguageController, registerLanguageIpc } from './language'
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -52,6 +53,7 @@ const remoteController = new RemoteController(stateStore, remoteActions, (enable
 })
 const powerBlocker = new PowerBlockerController()
 const spotifyController = new SpotifyController()
+const languageController = new LanguageController()
 const PHOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png'])
 const THUMBNAIL_CACHE_LIMIT = 300
 const thumbnailCache = new Map<string, Buffer>()
@@ -407,6 +409,7 @@ function registerIpc(): void {
   registerRemoteIpc(remoteController)
   registerPowerIpc(powerBlocker)
   registerSpotifyIpc(spotifyController)
+  registerLanguageIpc(languageController)
 }
 
 app.whenReady().then(async () => {
@@ -422,6 +425,7 @@ app.whenReady().then(async () => {
     console.warn('Widevine components 準備失敗', error)
   }
   powerBlocker.start()
+  languageController.start()
   createWindows()
   remoteController.start()
   spotifyController.start()

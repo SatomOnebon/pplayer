@@ -22,6 +22,7 @@ import { CueListPanel } from './control/CueListPanel'
 import { ExportPanel } from './control/ExportPanel'
 import { MaskSettings } from './control/MaskSettings'
 import { DisplaySleepSettings } from './control/DisplaySleepSettings'
+import { LanguageSettings } from './control/LanguageSettings'
 import { LocalBgmLibrary } from './control/LocalBgmLibrary'
 import { MaterialLibrary } from './control/MaterialLibrary'
 import { MaterialPreviewModal } from './control/MaterialPreviewModal'
@@ -36,15 +37,17 @@ import { getActiveBgmSource } from './control/lib/bgmSource'
 import { PlaybackCanvas } from './lib/PlaybackCanvas'
 import { resolvePlaybackFrame } from './lib/playbackFrame'
 import { useAppState } from './useAppState'
+import { LocaleProvider, useT } from './i18n/LocaleProvider'
 import './styles.css'
 
 export function Control(): React.JSX.Element {
+  const t = useT()
   const state = useAppState()
   const [viewMode, setViewMode] = useState<'show' | 'setup'>(() =>
     localStorage.getItem('pplayer.viewMode') === 'setup' ? 'setup' : 'show'
   )
   const [setupSection, setSetupSection] = useState<
-    'materials' | 'bgm' | 'stage' | 'audio' | 'export' | 'remote'
+    'materials' | 'bgm' | 'stage' | 'audio' | 'export' | 'remote' | 'display'
   >('materials')
   const [displayBounds, setDisplayBounds] = useState<DisplayBounds>({
     width: 960,
@@ -309,18 +312,18 @@ export function Control(): React.JSX.Element {
     <main className="control-app">
       <header className="app-header">
         <div className="app-brand">
-          <h1>pplayer</h1>
-          <p>ライブ演出コントロール</p>
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.subtitle')}</p>
         </div>
         <div className="header-center">
-          <div className="modeswitch" role="tablist" aria-label="画面モード">
+          <div className="modeswitch" role="tablist" aria-label={t('mode.label')}>
             <button
               type="button"
               role="tab"
               aria-selected={viewMode === 'show'}
               onClick={() => changeViewMode('show')}
             >
-              本番
+              {t('mode.show')}
             </button>
             <button
               type="button"
@@ -328,7 +331,7 @@ export function Control(): React.JSX.Element {
               aria-selected={viewMode === 'setup'}
               onClick={() => changeViewMode('setup')}
             >
-              準備
+              {t('mode.setup')}
             </button>
           </div>
           {inlineMessage && (
@@ -342,12 +345,12 @@ export function Control(): React.JSX.Element {
             <>
               <span className={`status-badge status-${state.status}`}>
                 {state.status === 'playing'
-                  ? '再生中'
+                  ? t('status.playing')
                   : state.status === 'paused'
-                    ? '一時停止'
+                    ? t('status.paused')
                     : state.status === 'blackout'
-                      ? 'ブラックアウト'
-                      : '待機'}
+                      ? t('status.blackout')
+                      : t('status.standby')}
               </span>
               <button
                 type="button"
@@ -355,21 +358,23 @@ export function Control(): React.JSX.Element {
                 aria-pressed={state.outputLocked}
                 onClick={() => send({ type: 'setOutputLock', locked: !state.outputLocked })}
               >
-                {state.outputLocked ? '🔒 ロック中（解除）' : '🔓 出力ロック'}
+                {state.outputLocked
+                  ? `🔒 ${t('header.outputLockRelease')}`
+                  : `🔓 ${t('header.outputLock')}`}
               </button>
               {state.outputLocked && (
                 <span className="output-lock-badge" role="status">
-                  🔒 出力ロック中
+                  🔒 {t('header.outputLockBadge')}
                 </span>
               )}
             </>
           ) : (
             <>
               <button type="button" onClick={() => void saveProject()}>
-                保存
+                {t('header.save')}
               </button>
               <button type="button" onClick={() => void loadProject()}>
-                読み込み
+                {t('header.load')}
               </button>
             </>
           )}
@@ -430,14 +435,14 @@ export function Control(): React.JSX.Element {
         </div>
       ) : (
         <div className="setup-layout">
-          <nav className="setnav" role="tablist" aria-label="準備メニュー">
+          <nav className="setnav" role="tablist" aria-label={t('setup.navLabel')}>
             <button
               type="button"
               role="tab"
               aria-selected={setupSection === 'materials'}
               onClick={() => setSetupSection('materials')}
             >
-              素材ライブラリ
+              {t('setup.nav.materials')}
             </button>
             <button
               type="button"
@@ -445,7 +450,7 @@ export function Control(): React.JSX.Element {
               aria-selected={setupSection === 'bgm'}
               onClick={() => setSetupSection('bgm')}
             >
-              BGM
+              {t('setup.nav.bgm')}
             </button>
             <button
               type="button"
@@ -453,7 +458,7 @@ export function Control(): React.JSX.Element {
               aria-selected={setupSection === 'stage'}
               onClick={() => setSetupSection('stage')}
             >
-              ステージ出力
+              {t('setup.nav.stage')}
             </button>
             <button
               type="button"
@@ -461,7 +466,7 @@ export function Control(): React.JSX.Element {
               aria-selected={setupSection === 'audio'}
               onClick={() => setSetupSection('audio')}
             >
-              音声
+              {t('setup.nav.audio')}
             </button>
             <button
               type="button"
@@ -469,7 +474,7 @@ export function Control(): React.JSX.Element {
               aria-selected={setupSection === 'export'}
               onClick={() => setSetupSection('export')}
             >
-              書き出し
+              {t('setup.nav.export')}
             </button>
             <button
               type="button"
@@ -477,7 +482,15 @@ export function Control(): React.JSX.Element {
               aria-selected={setupSection === 'remote'}
               onClick={() => setSetupSection('remote')}
             >
-              リモート
+              {t('setup.nav.remote')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={setupSection === 'display'}
+              onClick={() => setSetupSection('display')}
+            >
+              {t('setup.nav.display')}
             </button>
           </nav>
           <section className="setbody">
@@ -505,6 +518,7 @@ export function Control(): React.JSX.Element {
             )}
             {setupSection === 'export' && <ExportPanel state={state} send={send} />}
             {setupSection === 'remote' && <RemoteSettings />}
+            {setupSection === 'display' && <LanguageSettings />}
           </section>
         </div>
       )}
@@ -520,6 +534,8 @@ export function Control(): React.JSX.Element {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Control />
+    <LocaleProvider>
+      <Control />
+    </LocaleProvider>
   </StrictMode>
 )

@@ -5,6 +5,7 @@ import {
   type DisplayBounds,
   type ExportConfig,
   type ExportProgress,
+  type Locale,
   type PlaybackCommand,
   type PowerSettings,
   type PowerSettingsState,
@@ -84,6 +85,13 @@ const api = {
       callback(settings)
     ipcRenderer.on(IPC.powerSettingsChanged, listener)
     return () => ipcRenderer.removeListener(IPC.powerSettingsChanged, listener)
+  },
+  getLanguage: (): Promise<Locale> => ipcRenderer.invoke(IPC.getLanguage),
+  setLanguage: (locale: Locale): Promise<Locale> => ipcRenderer.invoke(IPC.setLanguage, locale),
+  onLanguageChanged: (callback: (locale: Locale) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, locale: Locale): void => callback(locale)
+    ipcRenderer.on(IPC.languageChanged, listener)
+    return () => ipcRenderer.removeListener(IPC.languageChanged, listener)
   },
   getSpotifySettings: (): Promise<SpotifySettingsState> =>
     ipcRenderer.invoke(IPC.getSpotifySettings),

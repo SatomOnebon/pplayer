@@ -1,5 +1,6 @@
 export type FitMode = 'contain' | 'cover'
 export type StageAspect = 'free' | '16:9'
+export type Locale = 'ja' | 'en'
 
 export type FadeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
 
@@ -332,6 +333,9 @@ export const IPC = {
   getPowerSettings: 'power:get-settings',
   setPowerSettings: 'power:set-settings',
   powerSettingsChanged: 'power:settings-changed',
+  getLanguage: 'language:get',
+  setLanguage: 'language:set',
+  languageChanged: 'language:changed',
   getSpotifySettings: 'spotify:get-settings',
   setSpotifySettings: 'spotify:set-settings',
   spotifySettingsChanged: 'spotify:settings-changed',

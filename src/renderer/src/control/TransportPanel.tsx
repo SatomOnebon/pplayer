@@ -2,14 +2,8 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { PlaybackCommand } from '../../../shared/types'
 import type { EditingAppState } from '../../../shared/migration'
 import type { PlaybackFrame } from '../lib/playbackFrame'
+import { useT } from '../i18n/LocaleProvider'
 import { formatDuration, seconds } from './utils'
-
-const PHASE_LABELS = {
-  fadeIn: 'フェードイン',
-  hold: '表示',
-  fadeOut: 'フェードアウト',
-  black: '—'
-} as const
 
 export function TransportPanel({
   state,
@@ -28,6 +22,7 @@ export function TransportPanel({
   outputLocked: boolean
   send: (command: PlaybackCommand) => void
 }): React.JSX.Element {
+  const t = useT()
   const volumeFrameRef = useRef<number | null>(null)
   const pendingVolumeRef = useRef<number | null>(null)
   const activeCue = state.cues.find((cue) => cue.id === state.activeCueId)
@@ -56,16 +51,16 @@ export function TransportPanel({
   return (
     <section className="panel transport-panel" aria-labelledby="transport-heading">
       <h2 id="transport-heading" className="visually-hidden">
-        再生操作
+        {t('transport.heading')}
       </h2>
       <div className="transport-buttons">
         <button
           type="button"
           disabled={outputLocked || !slideshowActive}
-          title="前の写真（←）"
+          title={t('transport.previousTitle')}
           onClick={() => send({ type: 'prev' })}
         >
-          ◀ 前へ
+          {t('transport.previous')}
         </button>
         <button
           className="play-button"
@@ -78,43 +73,45 @@ export function TransportPanel({
           }
           onClick={() => send({ type: 'playPause' })}
         >
-          {state.status === 'playing' ? 'Ⅱ 一時停止' : '▶ 再生'}
+          {state.status === 'playing' ? t('transport.pause') : t('transport.play')}
         </button>
         <button
           type="button"
           disabled={outputLocked || !slideshowActive}
-          title="次の写真（→）"
+          title={t('transport.nextTitle')}
           onClick={() => send({ type: 'next' })}
         >
-          次へ ▶
+          {t('transport.next')}
         </button>
         <button
           className={state.status === 'blackout' ? 'active danger' : ''}
           type="button"
           disabled={outputLocked}
-          title="ブラックアウト（B）"
+          title={t('transport.blackoutTitle')}
           onClick={() => send({ type: 'toggleBlackout' })}
         >
-          ● ブラックアウト
+          {t('transport.blackout')}
         </button>
         <button
           className={`ftb-button${state.ftbHeld ? ' active' : ''}`}
           type="button"
           disabled={outputLocked}
-          title={
-            state.ftbHeld ? 'FTB を解除して停止位置から再開(F)' : '黒へフェードして一時停止(F)'
-          }
+          title={state.ftbHeld ? t('transport.ftbReleaseTitle') : t('transport.ftbTitle')}
           onClick={() => send({ type: 'masterFtb' })}
         >
-          {state.ftbHeld ? 'FTB 解除' : 'FTB'}
+          {state.ftbHeld ? t('transport.ftbRelease') : t('transport.ftb')}
         </button>
       </div>
       <div className="cue-status">
-        <span>実行中: {activeCue?.label ?? '蓋絵 / 待機'}</span>
+        <span>
+          {t('transport.activeCue', {
+            name: activeCue?.label ?? t('transport.standby')
+          })}
+        </span>
       </div>
       <div className="master-volume-control">
         <label htmlFor="master-volume">
-          <span>マスター音量</span>
+          <span>{t('transport.masterVolume')}</span>
           <strong>{masterVolumePercent}%</strong>
         </label>
         <input
@@ -126,38 +123,43 @@ export function TransportPanel({
           value={masterVolumePercent}
           onChange={(event) => queueMasterVolume(Number(event.target.value) / 100)}
         />
-        <small className="master-volume-hint">映像・BGM 全体（Spotify 含む）</small>
-        {masterVolumePercent === 0 && <small>ミュート中</small>}
+        <small className="master-volume-hint">{t('transport.masterVolumeHint')}</small>
+        {masterVolumePercent === 0 && <small>{t('transport.muted')}</small>}
       </div>
       {state.audioFallbackActive && (
         <p className="audio-fallback-warning" role="alert">
-          ⚠ 音声を出力できないため消音で再生中
+          {t('transport.audioFallback')}
         </p>
       )}
       {state.status === 'blackout' && (
-        <small className="blackout-hint">B キーでブラックアウト解除</small>
+        <small className="blackout-hint">{t('transport.blackoutHint')}</small>
       )}
       {(state.ftb || state.ftbHeld) && (
-        <small className="ftb-hint">{state.ftbHeld ? 'FTB 保持中' : 'FTB 実行中'}</small>
+        <small className="ftb-hint">
+          {state.ftbHeld ? t('transport.ftbHeld') : t('transport.ftbRunning')}
+        </small>
       )}
       {slideshowActive && (
         <div className="progress-grid">
           <div>
-            <span>進行</span>
+            <span>{t('transport.progressLabel')}</span>
             <strong>
-              {currentNumber} / 全{frame.playablePhotos.length}枚
+              {t('transport.progress', {
+                current: currentNumber,
+                total: frame.playablePhotos.length
+              })}
             </strong>
           </div>
           <div>
-            <span>フェーズ</span>
-            <strong>{PHASE_LABELS[frame.timeline.phase]}</strong>
+            <span>{t('transport.phaseLabel')}</span>
+            <strong>{t(`transport.phase.${frame.timeline.phase}`)}</strong>
           </div>
           <div>
-            <span>この写真の残り</span>
-            <strong>{seconds(cycleRemainingMs)}秒</strong>
+            <span>{t('transport.remainingLabel')}</span>
+            <strong>{t('transport.seconds', { seconds: seconds(cycleRemainingMs) })}</strong>
           </div>
           <div>
-            <span>全体所要時間</span>
+            <span>{t('transport.totalDuration')}</span>
             <strong>{formatDuration(totalDurationMs)}</strong>
           </div>
         </div>

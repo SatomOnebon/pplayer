@@ -3,6 +3,7 @@ import type {
   DisplayBounds,
   ExportConfig,
   ExportProgress,
+  Locale,
   PlaybackCommand,
   PowerSettings,
   PowerSettingsState,
@@ -50,6 +51,9 @@ export interface PPlayerAPI {
   getPowerSettings(): Promise<PowerSettingsState>
   setPowerSettings(settings: PowerSettings): Promise<PowerSettingsState>
   onPowerSettingsChanged(callback: (settings: PowerSettingsState) => void): () => void
+  getLanguage(): Promise<Locale>
+  setLanguage(locale: Locale): Promise<Locale>
+  onLanguageChanged(callback: (locale: Locale) => void): () => void
   getSpotifySettings(): Promise<SpotifySettingsState>
   setSpotifySettings(update: SpotifySettingsUpdate): Promise<SpotifySettingsState>
   authorizeSpotify(): Promise<SpotifySettingsState>

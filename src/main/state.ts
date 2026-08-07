@@ -713,7 +713,6 @@ export class AppStateStore {
 
   private removeMaterial(type: 'slideshow' | 'video' | 'still', id: string): void {
     if (type === 'slideshow') {
-      if (this.state.materials.slideshows.length === 1) return
       this.state.materials.slideshows = this.state.materials.slideshows.filter(
         (item) => item.id !== id
       )

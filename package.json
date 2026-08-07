@@ -1,6 +1,6 @@
 {
   "name": "pplayer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ライブイベント用の映像ポン出し（キュー出し）アプリ（円形スクリーン投影・BGM 再生はローカル音源／Spotify）",
   "main": "./out/main/index.js",
   "author": "onelab",

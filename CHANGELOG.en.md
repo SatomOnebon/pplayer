@@ -8,11 +8,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-08
+
+### Fixed
+
+- **Crash from video thumbnails**: generating a thumbnail for a video cue/material could crash the app when the video was very large (e.g. a multi-GB mp4). Because a video cue is persisted, this caused a crash loop on every launch. Thumbnails are now generated for images only; materials without one show a fallback ("Video") label.
+- **Deleting a slideshow**: deleting a slideshow did nothing when only one remained. The last slideshow can now be deleted; an editing slideshow is always kept (a fresh empty one is recreated), so the control and display windows never freeze.
+
 ## [1.0.0] - 2026-08-02
 
 First public release.
 
 ### Added
+
 - **Cue playback**: prepare photos, videos, and slideshows as cues and press GO to instantly project them onto a circular screen. Standby image, blackout, FTB, jump-to-any-cue; single-click to arm, double-click to fire.
 - **Circular-mask projection**: a control window (MacBook) plus a display window (projector); circular / custom-image masks with position, size, and stage-aspect adjustment.
 - **BGM playback**: switch between local audio playlists (suitable for commercial use) and Spotify (Web Playback SDK). Independent transport plus cue-linked auto-switching with fades; both crossfade and fade-out→fade-in modes. Mixer-style master volume over all video and BGM, and a shared output device for video and BGM.
@@ -22,9 +30,11 @@ First public release.
 - **macOS build**: castLabs Electron + VMP signing (for Spotify/Widevine). A Spotify-free build is possible without signing via `PPLAYER_SKIP_VMP=1`.
 
 ### Notes
+
 - Distributed binaries are ad-hoc signed and not notarized; on first launch, right-click → Open.
 - Spotify BGM requires your own Spotify **Premium** account and **Client ID** (entered in-app, not bundled).
 - Public playback of music may require rights clearance; compliance is the user's responsibility (see `NOTICE.en.md`).
 
-[Unreleased]: https://github.com/SatomOnebon/pplayer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/SatomOnebon/pplayer/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/SatomOnebon/pplayer/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/SatomOnebon/pplayer/releases/tag/v1.0.0

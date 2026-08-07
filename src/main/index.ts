@@ -68,6 +68,12 @@ function cacheThumbnail(key: string, buffer: Buffer): void {
 }
 
 async function createThumbnail(filePath: string, size: number): Promise<Buffer | null> {
+  // サムネイル生成は画像（写真・静止画）専用。動画・音声に対して
+  // nativeImage.createThumbnailFromPath を呼ぶと、大きな動画などで
+  // メインプロセスがネイティブクラッシュする（例: 数GB の mp4）。
+  // 動画キューはフォールバックラベル（「動画」）を表示するため問題ない。
+  if (!isPhotoPath(filePath)) return null
+
   const fileStat = await stat(filePath)
   const cacheKey = `${filePath}|${size}|${fileStat.mtimeMs}`
   const cached = thumbnailCache.get(cacheKey)
@@ -246,8 +252,15 @@ function registerProtocol(): void {
           })
         }
       } catch {
-        // Fall through to the original file if thumbnail generation fails.
+        // Ignore thumbnail failures and fall through to the 404 below.
       }
+      // サムネイル要求（?thumb）で生成できない素材（動画・音声・巨大ファイル等）は、
+      // 元ファイル全体を返すと <img> に読み込んだレンダラーがクラッシュする。
+      // 404 を返して <img> の onError → フォールバックラベル表示に委ねる。
+      return new Response(null, {
+        status: 404,
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      })
     }
     const fileStat = await stat(filePath)
     const range = parseByteRange(request.headers.get('range'), fileStat.size)

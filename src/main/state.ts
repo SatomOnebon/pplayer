@@ -716,8 +716,15 @@ export class AppStateStore {
       this.state.materials.slideshows = this.state.materials.slideshows.filter(
         (item) => item.id !== id
       )
-      if (this.state.editingSlideshowId === id) {
-        this.state.editingSlideshowId = this.state.materials.slideshows[0]?.id ?? null
+      // アプリは常に編集対象スライドショーが 1 つ存在する前提。
+      // selectEditingAppState() は編集対象が無いと state 全体を null にし、
+      // 操作・表示ウィンドウが「読込中」で固まる。最後の 1 つを消した場合は
+      // 空スライドショーを即生成して不変条件を維持する（constructor / 読込と同じ扱い）。
+      if (this.state.materials.slideshows.length === 0) {
+        this.state.materials.slideshows.push(createEmptySlideshow())
+      }
+      if (!getEditingSlideshow(this.state)) {
+        this.state.editingSlideshowId = this.state.materials.slideshows[0].id
         this.resetPlayback()
       }
     } else if (type === 'video') {
